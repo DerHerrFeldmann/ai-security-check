@@ -241,9 +241,22 @@ func scanDir(dir string) (Result, error) {
 			}
 		}
 
+		// Check if this file has WP sanitization context (reduces FPs)
+		fileHasSanitization := false
+		for _, fn := range wpSanitizationFuncs {
+			if strings.Contains(content, strings.TrimPrefix(fn, `\$`)) {
+				fileHasSanitization = true
+				break
+			}
+		}
+
 		fileFlagged := false
 		for label, re := range securityPatterns {
 			if re.MatchString(content) && !securitySeen[label] {
+				// Skip flag if the same file has WP sanitization (likely safe context)
+				if fileHasSanitization && (label == "base64_decode" || label == "unescaped $_POST/GET" || label == "SQL without prepare") {
+					continue
+				}
 				result.SecurityFlags = append(result.SecurityFlags, label)
 				securitySeen[label] = true
 				fileFlagged = true
