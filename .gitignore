@@ -1,2 +1,25 @@
+# secrets
 .env
+api/.env
+
+# compiled binaries
 api/wpinsight
+wpinsight
+
+# IDE
+.idea/
+.vscode/
+
+# Claude Code session data
+.claude/
+
+# frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+
+# cloned reference repo (not our code)
+plugin-check/
+
+# Python scanner (superseded by Go)
+scanner/__pycache__/
+scanner/*.pyc

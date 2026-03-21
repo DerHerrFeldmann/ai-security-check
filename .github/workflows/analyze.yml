@@ -1,0 +1,40 @@
+name: Analyze WordPress Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugin_slug:
+        description: "WordPress plugin slug (e.g. woocommerce)"
+        required: true
+        type: string
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed to commit the report back
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scanner/requirements.txt
+
+      - name: Run scanner
+        run: python scanner/analyze.py "${{ inputs.plugin_slug }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit report
+        run: |
+          git config user.name "WP Plugin Insight Bot"
+          git config user.email "bot@wp-plugin-insight"
+          git add reports/
+          git diff --staged --quiet || git commit -m "report: ${{ inputs.plugin_slug }}"
+          git push
