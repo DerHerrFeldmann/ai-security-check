@@ -1,0 +1,19 @@
+{
+  "slug": "wapuugotchi",
+  "score": 88,
+  "scan": {
+    "files_scanned": 223,
+    "deprecated_functions": [],
+    "security_flags": [],
+    "external_calls": 6,
+    "direct_db_access": true,
+    "min_php_version": "7.0",
+    "missing_i18n_samples": [
+      "Composer detected issues in your platform:"
+    ],
+    "suspicious_files": [],
+    "semgrep_findings": [],
+    "phpcs_findings": []
+  },
+  "summary": ""
+}
