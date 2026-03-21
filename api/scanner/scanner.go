@@ -433,16 +433,18 @@ func runPHPCS(dir string) []Finding {
 }
 
 // Score calculates a quality score 0–100.
+// Penalties are capped so that large but well-maintained plugins
+// (e.g. WooCommerce) don't hit 0 due to sheer volume of findings.
 func Score(r Result) int {
 	score := 100
-	score -= len(r.DeprecatedFuncs) * 5
-	score -= len(r.SecurityFlags) * 15
+	score -= min(len(r.DeprecatedFuncs)*5, 15)  // max -15
+	score -= min(len(r.SecurityFlags)*8, 24)     // max -24 (was -15 each, uncapped)
 	if r.DirectDBAccess {
-		score -= 10
+		score -= 5 // informational, not always bad in WP
 	}
-	score -= min(len(r.MissingI18nSamples)*2, 20)
-	score -= min(len(r.SemgrepFindings)*3, 20)
-	score -= min(len(r.PHPCSFindings)/10, 10)
+	score -= min(len(r.MissingI18nSamples)*2, 10) // max -10
+	score -= min(len(r.SemgrepFindings)*3, 20)    // max -20
+	score -= min(len(r.PHPCSFindings)/10, 10)     // max -10
 	if score < 0 {
 		return 0
 	}
