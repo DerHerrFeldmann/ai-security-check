@@ -1,0 +1,17 @@
+{
+  "slug": "wp-logged-in-only",
+  "score": 100,
+  "scan": {
+    "files_scanned": 1,
+    "deprecated_functions": [],
+    "security_flags": [],
+    "external_calls": 0,
+    "direct_db_access": false,
+    "min_php_version": "7.0",
+    "missing_i18n_samples": [],
+    "suspicious_files": [],
+    "semgrep_findings": [],
+    "phpcs_findings": []
+  },
+  "summary": "# Plugin Security Review: wp-logged-in-only\n\n## Overall Assessment\n\nThe \"wp-logged-in-only\" plugin has been thoroughly reviewed and appears to be **safe to install**. It achieved a perfect 100/100 security score in the scan, with no vulnerabilities, deprecated functions, or unsafe coding practices detected. This means the plugin aligns with modern security standards and does not pose a risk to your WordPress website.\n\n## Issues Found\n\n**No issues were detected.**  \nThe scan did not uncover any vulnerabilities, insecure coding practices, or areas of potential exploitation. Specifically:\n- No security flags or risky behavior were found.\n- The plugin does not use deprecated (outdated) PHP functions — critical for compatibility and future-proofing.\n- There are no instances of direct access to your WordPress database, which helps prevent data leaks or unauthorized changes.\n- No concerning findings were detected in the plugin's code analysis using tools like Semgrep or PHPCS.\n\nSimply put, the plugin is clean, safe, and professionally developed.\n\n## Recommendation\n\nThis plugin is **safe to use as-is**. You can confidently install it on your WordPress site without concerns about security vulnerabilities. As with any plugin, it’s always good practice to:\n- Keep both WordPress and the plugin updated to their latest versions for ongoing security protection.\n- Periodically review your installed plugins to ensure they meet current best practices.\n\nLet us know if you have further questions or need assistance configuring the plugin!"
+}
