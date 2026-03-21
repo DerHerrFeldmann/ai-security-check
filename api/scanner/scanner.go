@@ -57,6 +57,7 @@ type Result struct {
 	SuspiciousFiles    []CodeSnippet `json:"suspicious_files"`
 	SemgrepFindings    []Finding     `json:"semgrep_findings"`
 	PHPCSFindings      []Finding     `json:"phpcs_findings"`
+	ESLintFindings     []Finding     `json:"eslint_findings"`
 }
 
 var deprecatedFuncs = []string{
@@ -122,8 +123,12 @@ func Analyze(slug string) (Result, error) {
 	go func() { semgrepCh <- runSemgrep(tmpDir) }()
 	go func() { phpcsСh <- runPHPCS(tmpDir) }()
 
+	eslintCh := make(chan []Finding, 1)
+	go func() { eslintCh <- runESLint(tmpDir) }()
+
 	result.SemgrepFindings = <-semgrepCh
 	result.PHPCSFindings = <-phpcsСh
+	result.ESLintFindings = <-eslintCh
 
 	// Check and remove false positives while temp dir still exists
 	confirmed := []Finding{}
@@ -421,6 +426,89 @@ func runPHPCS(dir string) []Finding {
 	return findings
 }
 
+// runESLint runs ESLint with @wordpress/eslint-plugin against JS files.
+func runESLint(dir string) []Finding {
+	eslintBin := os.Getenv("ESLINT_BIN")
+	if eslintBin == "" {
+		eslintBin = "eslint"
+	}
+
+	// Write a temp eslint config
+	cfg := `{
+  "plugins": ["@wordpress"],
+  "extends": ["plugin:@wordpress/eslint-plugin/recommended"],
+  "env": { "browser": true, "jquery": true, "es2020": true },
+  "globals": { "wp": "readonly", "jQuery": "readonly", "ajaxurl": "readonly" },
+  "ignorePatterns": ["*.min.js", "**/vendor/**", "**/node_modules/**"]
+}`
+	cfgFile, err := os.CreateTemp("", "eslintrc-*.json")
+	if err != nil {
+		return []Finding{}
+	}
+	defer os.Remove(cfgFile.Name())
+	cfgFile.WriteString(cfg)
+	cfgFile.Close()
+
+	cmd := exec.Command(eslintBin,
+		"--config", cfgFile.Name(),
+		"--format", "json",
+		"--ext", ".js",
+		"--ignore-pattern", "*.min.js",
+		"--ignore-pattern", "**/vendor/**",
+		"--ignore-pattern", "**/node_modules/**",
+		dir,
+	)
+	if nodePath := os.Getenv("ESLINT_NODE_PATH"); nodePath != "" {
+		cmd.Env = append(os.Environ(), "NODE_PATH="+nodePath)
+	}
+
+	out, _ := cmd.Output()
+	if len(out) == 0 {
+		return []Finding{}
+	}
+
+	var results []struct {
+		FilePath string `json:"filePath"`
+		Messages []struct {
+			RuleID   string `json:"ruleId"`
+			Severity int    `json:"severity"`
+			Message  string `json:"message"`
+			Line     int    `json:"line"`
+		} `json:"messages"`
+	}
+	if err := json.Unmarshal(out, &results); err != nil {
+		return []Finding{}
+	}
+
+	realDir, _ := filepath.EvalSymlinks(dir)
+	findings := []Finding{}
+	for _, f := range results {
+		realPath, _ := filepath.EvalSymlinks(f.FilePath)
+		rel, err := filepath.Rel(realDir, realPath)
+		if err != nil {
+			rel = filepath.Base(f.FilePath)
+		}
+		for _, m := range f.Messages {
+			if m.RuleID == "" {
+				continue
+			}
+			sev := "WARNING"
+			if m.Severity == 2 {
+				sev = "ERROR"
+			}
+			findings = append(findings, Finding{
+				Tool:     "eslint",
+				File:     rel,
+				Line:     m.Line,
+				Severity: sev,
+				Message:  m.Message,
+				Rule:     m.RuleID,
+			})
+		}
+	}
+	return findings
+}
+
 // Score calculates a quality score 0–100.
 func Score(r Result) int {
 	score := 100
@@ -432,6 +520,7 @@ func Score(r Result) int {
 	score -= min(len(r.MissingI18nSamples)*2, 20)
 	score -= min(len(r.SemgrepFindings)*3, 20)
 	score -= min(len(r.PHPCSFindings)/10, 10)
+	score -= min(len(r.ESLintFindings)/5, 10)
 	if score < 0 {
 		return 0
 	}

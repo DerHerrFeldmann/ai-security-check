@@ -33,6 +33,15 @@ jobs:
           composer global require "squizlabs/php_codesniffer:^3.13" "wp-coding-standards/wpcs:^3.1" --no-interaction
         continue-on-error: true
 
+      - name: Install ESLint + WordPress plugin
+        run: |
+          mkdir -p /opt/eslint && cd /opt/eslint
+          npm init -y
+          npm install --save-dev eslint @wordpress/eslint-plugin eslint-plugin-jsx-a11y
+          echo "ESLINT_BIN=/opt/eslint/node_modules/.bin/eslint" >> $GITHUB_ENV
+          echo "ESLINT_NODE_PATH=/opt/eslint/node_modules" >> $GITHUB_ENV
+        continue-on-error: true
+
       - name: Create reports directory
         run: mkdir -p reports
 
@@ -42,6 +51,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.VITE_GH_TOKEN }}
           PHPCS_BIN: ~/.composer/vendor/bin/phpcs
+          ESLINT_BIN: ${{ env.ESLINT_BIN }}
+          ESLINT_NODE_PATH: ${{ env.ESLINT_NODE_PATH }}
 
       - name: Commit report
         run: |

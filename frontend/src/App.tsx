@@ -27,6 +27,7 @@ interface ScanResult {
   missing_i18n_samples: string[];
   semgrep_findings: Finding[];
   phpcs_findings: Finding[];
+  eslint_findings: Finding[];
 }
 
 interface Report {
@@ -465,6 +466,9 @@ export default function App() {
             {/* Findings */}
             <Collapsible title="Semgrep" count={scan.semgrep_findings?.length ?? 0} color="#dc2626">
               <FindingsTable findings={scan.semgrep_findings ?? []} color="#dc2626" />
+            </Collapsible>
+            <Collapsible title="ESLint (WordPress)" count={scan.eslint_findings?.length ?? 0} color="#7c3aed">
+              <FindingsTable findings={scan.eslint_findings ?? []} color="#7c3aed" />
             </Collapsible>
             <Collapsible title="PHPCS" count={scan.phpcs_findings?.length ?? 0} color="#d97706">
               <FindingsTable findings={scan.phpcs_findings ?? []} color="#d97706" />
