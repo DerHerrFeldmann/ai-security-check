@@ -321,7 +321,7 @@ export default function App() {
           }
         }
 
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; justify-content: center; }
         .card       { background: var(--bg-card); border: 1px solid var(--border); }
         .card-deep  { background: var(--bg-deep); }
         .text-muted { color: var(--text-muted); }
