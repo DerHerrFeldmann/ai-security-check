@@ -54,14 +54,15 @@ function getRuleInfo(ruleId: string) {
   return key ? ruleExplanations[key] : { label: ruleId.split(".").pop() ?? ruleId, explanation: "" };
 }
 
-const scoreColor = (s: number) => s >= 70 ? "#22c55e" : s >= 40 ? "#f59e0b" : "#ef4444";
-const scoreBg    = (s: number) => s >= 70 ? "#14532d" : s >= 40 ? "#78350f" : "#7f1d1d";
+const scoreColor = (s: number) => s >= 70 ? "#16a34a" : s >= 40 ? "#d97706" : "#dc2626";
+const scoreBg    = (s: number) => s >= 70 ? "#f0fdf4" : s >= 40 ? "#fffbeb" : "#fef2f2";
+const scoreDark  = (s: number) => s >= 70 ? "#14532d" : s >= 40 ? "#78350f" : "#7f1d1d";
 const scoreLabel = (s: number) => s >= 70 ? "Good"    : s >= 40 ? "Review"  : "Critical";
 
 function Pill({ label, color }: { label: string; color: string }) {
   return (
     <span style={{
-      background: color + "20", color, border: `1px solid ${color}40`,
+      background: color + "18", color, border: `1px solid ${color}30`,
       borderRadius: 20, padding: "3px 12px", fontSize: 13, display: "inline-block",
       margin: "3px 4px 3px 0",
     }}>{label}</span>
@@ -70,9 +71,9 @@ function Pill({ label, color }: { label: string; color: string }) {
 
 function StatCard({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {
   return (
-    <div style={{ background: "#0f172a", borderRadius: 12, padding: "16px 20px" }}>
-      <div style={{ color: "#64748b", fontSize: 12, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontWeight: 700, fontSize: 22, color: warn ? "#f59e0b" : "#f1f5f9" }}>{value}</div>
+    <div className="card-deep" style={{ borderRadius: 12, padding: "16px 20px" }}>
+      <div className="text-muted" style={{ fontSize: 12, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontWeight: 700, fontSize: 22, color: warn ? "#d97706" : undefined }}>{value}</div>
     </div>
   );
 }
@@ -81,7 +82,7 @@ function Spinner({ size = 14 }: { size?: number }) {
   return (
     <span style={{
       display: "inline-block", width: size, height: size,
-      border: "2px solid #334155", borderTop: "2px solid #3b82f6",
+      border: "2px solid var(--border)", borderTop: "2px solid #3b82f6",
       borderRadius: "50%", animation: "spin 0.8s linear infinite",
       marginRight: 8, verticalAlign: "middle", flexShrink: 0,
     }} />
@@ -89,11 +90,11 @@ function Spinner({ size = 14 }: { size?: number }) {
 }
 
 function FindingsTable({ findings, color }: { findings: Finding[]; color: string }) {
-  if (findings.length === 0) return <span style={{ color: "#22c55e", fontSize: 14 }}>✓ None found</span>;
+  if (findings.length === 0) return <span style={{ color: "#16a34a", fontSize: 14 }}>✓ None found</span>;
   return (
     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
       <thead>
-        <tr style={{ color: "#64748b", textAlign: "left" }}>
+        <tr className="text-muted" style={{ textAlign: "left" }}>
           <th style={{ padding: "4px 8px 8px 0", fontWeight: 500 }}>File</th>
           <th style={{ padding: "4px 8px 8px 0", fontWeight: 500, width: 50 }}>Line</th>
           <th style={{ padding: "4px 0 8px 0", fontWeight: 500 }}>Rule</th>
@@ -104,25 +105,25 @@ function FindingsTable({ findings, color }: { findings: Finding[]; color: string
           const info = getRuleInfo(f.rule);
           const fp = f.possible_false_positive;
           return (
-            <tr key={i} style={{ borderTop: "1px solid #0f172a", opacity: fp ? 0.6 : 1 }}>
-              <td style={{ padding: "8px 8px 8px 0", color: "#94a3b8", fontFamily: "monospace", fontSize: 12, verticalAlign: "top" }}>
+            <tr key={i} style={{ borderTop: "1px solid var(--border)", opacity: fp ? 0.6 : 1 }}>
+              <td className="text-faint" style={{ padding: "8px 8px 8px 0", fontFamily: "monospace", fontSize: 12, verticalAlign: "top" }}>
                 {f.file}
               </td>
-              <td style={{ padding: "8px 8px 8px 0", color: "#64748b", fontSize: 12, verticalAlign: "top" }}>{f.line}</td>
+              <td className="text-muted" style={{ padding: "8px 8px 8px 0", fontSize: 12, verticalAlign: "top" }}>{f.line}</td>
               <td style={{ padding: "8px 0", verticalAlign: "top" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: fp ? "#64748b" : color, fontWeight: 600, fontSize: 13 }}>{info.label}</span>
+                  <span style={{ color: fp ? "var(--text-muted)" : color, fontWeight: 600, fontSize: 13 }}>{info.label}</span>
                   {fp && (
-                    <span style={{ background: "#1e3a2f", color: "#4ade80", border: "1px solid #16653a", borderRadius: 4, fontSize: 11, padding: "1px 7px" }}>
+                    <span style={{ background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", borderRadius: 4, fontSize: 11, padding: "1px 7px" }}>
                       likely false positive
                     </span>
                   )}
                 </div>
                 {fp && f.fp_reason && (
-                  <div style={{ color: "#4ade80", fontSize: 11, marginTop: 2 }}>↳ {f.fp_reason}</div>
+                  <div style={{ color: "#16a34a", fontSize: 11, marginTop: 2 }}>↳ {f.fp_reason}</div>
                 )}
                 {!fp && info.explanation && (
-                  <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 3, lineHeight: 1.5 }}>{info.explanation}</div>
+                  <div className="text-faint" style={{ fontSize: 12, marginTop: 3, lineHeight: 1.5 }}>{info.explanation}</div>
                 )}
               </td>
             </tr>
@@ -136,15 +137,15 @@ function FindingsTable({ findings, color }: { findings: Finding[]; color: string
 function Collapsible({ title, count, color, children }: { title: string; count: number; color: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(count > 0 && count <= 20);
   return (
-    <div style={{ background: "#1e293b", borderRadius: 16, overflow: "hidden" }}>
+    <div className="card" style={{ borderRadius: 16, overflow: "hidden" }}>
       <button onClick={() => setOpen(o => !o)} style={{
         width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: 24, background: "none", border: "none", outline: "none", cursor: "pointer", color: "#f1f5f9",
+        padding: 24, background: "none", border: "none", outline: "none", cursor: "pointer",
       }}>
         <div style={{ fontSize: 13, fontWeight: 600, color, textTransform: "uppercase", letterSpacing: 1 }}>
-          {title} — <span style={{ color: count === 0 ? "#22c55e" : color }}>{count} findings</span>
+          {title} — <span style={{ color: count === 0 ? "#16a34a" : color }}>{count} findings</span>
         </div>
-        <span style={{ color: "#64748b", fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+        <span className="text-muted" style={{ fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
       </button>
       {open && <div style={{ padding: "0 24px 24px" }}>{children}</div>}
     </div>
@@ -153,13 +154,13 @@ function Collapsible({ title, count, color, children }: { title: string; count: 
 
 const mdComponents = {
   h2: ({ children }: { children?: React.ReactNode }) => (
-    <h2 style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", margin: "20px 0 6px" }}>{children}</h2>
+    <h2 style={{ fontSize: 15, fontWeight: 700, margin: "20px 0 6px" }}>{children}</h2>
   ),
   h3: ({ children }: { children?: React.ReactNode }) => (
-    <h3 style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", margin: "14px 0 4px" }}>{children}</h3>
+    <h3 style={{ fontSize: 14, fontWeight: 600, margin: "14px 0 4px" }}>{children}</h3>
   ),
   p: ({ children }: { children?: React.ReactNode }) => (
-    <p style={{ color: "#cbd5e1", fontSize: 14, lineHeight: 1.75, margin: "4px 0 10px" }}>{children}</p>
+    <p className="text-faint" style={{ fontSize: 14, lineHeight: 1.75, margin: "4px 0 10px" }}>{children}</p>
   ),
   ul: ({ children }: { children?: React.ReactNode }) => (
     <ul style={{ paddingLeft: 20, margin: "4px 0 10px" }}>{children}</ul>
@@ -168,13 +169,13 @@ const mdComponents = {
     <ol style={{ paddingLeft: 20, margin: "4px 0 10px" }}>{children}</ol>
   ),
   li: ({ children }: { children?: React.ReactNode }) => (
-    <li style={{ color: "#cbd5e1", fontSize: 14, lineHeight: 1.75, marginBottom: 2 }}>{children}</li>
+    <li className="text-faint" style={{ fontSize: 14, lineHeight: 1.75, marginBottom: 2 }}>{children}</li>
   ),
   strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong style={{ color: "#f1f5f9", fontWeight: 700 }}>{children}</strong>
+    <strong style={{ fontWeight: 700 }}>{children}</strong>
   ),
   code: ({ children }: { children?: React.ReactNode }) => (
-    <code style={{ background: "#0f172a", color: "#7dd3fc", borderRadius: 4, padding: "1px 6px", fontSize: 13, fontFamily: "monospace" }}>{children}</code>
+    <code className="card-deep" style={{ color: "#3b82f6", borderRadius: 4, padding: "1px 6px", fontSize: 13, fontFamily: "monospace" }}>{children}</code>
   ),
 };
 
@@ -182,15 +183,15 @@ function AISummary({ summary }: { summary?: string }) {
   const [open, setOpen] = useState(true);
   if (!summary) return null;
   return (
-    <div style={{ background: "#1e293b", borderRadius: 16, overflow: "hidden" }}>
+    <div className="card" style={{ borderRadius: 16, overflow: "hidden" }}>
       <button onClick={() => setOpen(o => !o)} style={{
         width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: 24, background: "none", border: "none", outline: "none", cursor: "pointer", color: "#f1f5f9",
+        padding: 24, background: "none", border: "none", outline: "none", cursor: "pointer",
       }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: "#3b82f6", textTransform: "uppercase", letterSpacing: 1 }}>
           AI Assessment
         </div>
-        <span style={{ color: "#64748b", fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+        <span className="text-muted" style={{ fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
       </button>
       {open && (
         <div style={{ padding: "0 24px 24px" }}>
@@ -202,20 +203,11 @@ function AISummary({ summary }: { summary?: string }) {
 }
 
 function StatusBanner({ status }: { status: AnalysisStatus }) {
-  if (status === "idle" || status === "done") return null;
-
+  if (status === "idle" || status === "done" || status === "error") return null;
   const steps = ["queued", "running", "done"] as const;
   const currentIdx = steps.indexOf(status as typeof steps[number]);
-
-  if (status === "error") {
-    return null; // error is shown separately
-  }
-
   return (
-    <div style={{
-      background: "#1e293b", borderRadius: 12, padding: "14px 20px",
-      marginBottom: 24, display: "flex", alignItems: "center", gap: 16,
-    }}>
+    <div className="card" style={{ borderRadius: 12, padding: "14px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 16 }}>
       <Spinner />
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {steps.map((step, i) => (
@@ -223,12 +215,12 @@ function StatusBanner({ status }: { status: AnalysisStatus }) {
             <span style={{
               fontSize: 13,
               fontWeight: i <= currentIdx ? 600 : 400,
-              color: i < currentIdx ? "#22c55e" : i === currentIdx ? "#3b82f6" : "#475569",
+              color: i < currentIdx ? "#16a34a" : i === currentIdx ? "#3b82f6" : "var(--text-faint)",
             }}>
               {i < currentIdx ? "✓ " : ""}
               {step === "queued" ? "Queued" : step === "running" ? "Running (~2 min)" : "Done"}
             </span>
-            {i < steps.length - 1 && <span style={{ color: "#334155" }}>→</span>}
+            {i < steps.length - 1 && <span style={{ color: "var(--border)" }}>→</span>}
           </span>
         ))}
       </div>
@@ -242,18 +234,11 @@ async function dispatchWorkflow(slug: string) {
     `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml/dispatches`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${GH_TOKEN}`,
-        Accept: "application/vnd.github+json",
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
       body: JSON.stringify({ ref: "main", inputs: { plugin_slug: slug } }),
     }
   );
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Failed to dispatch workflow: ${res.status} ${body}`);
-  }
+  if (!res.ok) throw new Error(`Failed to dispatch workflow: ${res.status} ${await res.text()}`);
 }
 
 async function pollUntilComplete(): Promise<void> {
@@ -265,8 +250,7 @@ async function pollUntilComplete(): Promise<void> {
       { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: "application/vnd.github+json" } }
     );
     if (!res.ok) continue;
-    const data = await res.json();
-    const run = data.workflow_runs?.[0];
+    const run = (await res.json()).workflow_runs?.[0];
     if (!run) continue;
     if (run.status === "completed") {
       if (run.conclusion === "success") return;
@@ -277,8 +261,7 @@ async function pollUntilComplete(): Promise<void> {
 }
 
 async function fetchReport(slug: string): Promise<Report> {
-  const url = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/reports/${slug}.json?t=${Date.now()}`;
-  const res = await fetch(url);
+  const res = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/reports/${slug}.json?t=${Date.now()}`);
   if (!res.ok) throw new Error(`Report not found for "${slug}"`);
   return res.json();
 }
@@ -293,15 +276,8 @@ export default function App() {
   async function analyze() {
     const s = slug.trim().toLowerCase();
     if (!s) return;
-    if (!GH_TOKEN) {
-      setError("No GitHub token configured. Set VITE_GH_TOKEN in the repo secrets.");
-      return;
-    }
-
-    setStatus("queued");
-    setReport(null);
-    setError("");
-
+    if (!GH_TOKEN) { setError("No GitHub token configured. Set VITE_GH_TOKEN in the repo secrets."); return; }
+    setStatus("queued"); setReport(null); setError("");
     try {
       await dispatchWorkflow(s);
       await new Promise(r => setTimeout(r, 3000));
@@ -321,52 +297,87 @@ export default function App() {
   return (
     <>
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0f172a; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+          color-scheme: light dark;
+          --bg:         #f1f5f9;
+          --bg-card:    #ffffff;
+          --bg-deep:    #f8fafc;
+          --border:     #e2e8f0;
+          --text:       #0f172a;
+          --text-muted: #64748b;
+          --text-faint: #94a3b8;
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --bg:         #0f172a;
+            --bg-card:    #1e293b;
+            --bg-deep:    #0f172a;
+            --border:     #334155;
+            --text:       #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-faint: #64748b;
+          }
+        }
+
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .card       { background: var(--bg-card); border: 1px solid var(--border); }
+        .card-deep  { background: var(--bg-deep); }
+        .text-muted { color: var(--text-muted); }
+        .text-faint { color: var(--text-faint); }
+
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        @keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         .fade { animation: fadeIn 0.3s ease; }
-        input:focus { border-color: #3b82f6 !important; }
+
+        input { color-scheme: light dark; }
+        input:focus { border-color: #3b82f6 !important; outline: none; }
+        a { color: #3b82f6; }
+        a:hover { text-decoration: underline; }
+
+        @media (prefers-color-scheme: dark) {
+          .score-card-light { display: none !important; }
+        }
+        @media (prefers-color-scheme: light) {
+          .score-card-dark { display: none !important; }
+        }
       `}</style>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 32px" }}>
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "56px 32px" }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1 }}>WP Plugin Insight</h1>
-          <p style={{ color: "#64748b", marginTop: 6, fontSize: 15, lineHeight: 1.6 }}>
-            AI-powered security &amp; quality analysis for WordPress plugins.{" "}
-            The scanner runs entirely on{" "}
-            <a href="https://github.com/DerHerrFeldmann/ai-security-check/actions" target="_blank" rel="noreferrer"
-              style={{ color: "#3b82f6", textDecoration: "none" }}>GitHub Actions</a>
-            {" "}— slower than a local tool (~2 min), but 100% transparent: you can see every step,
-            read the source, and{" "}
-            <a href="https://github.com/DerHerrFeldmann/ai-security-check" target="_blank" rel="noreferrer"
-              style={{ color: "#3b82f6", textDecoration: "none" }}>contribute on GitHub</a>.
+        {/* Header — centered */}
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: -1 }}>WP Plugin Insight</h1>
+          <p className="text-muted" style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7, maxWidth: 580, margin: "10px auto 0" }}>
+            AI-powered security &amp; quality analysis for WordPress plugins.
+            Runs entirely on{" "}
+            <a href={`https://github.com/${GH_OWNER}/${GH_REPO}/actions`} target="_blank" rel="noreferrer">GitHub Actions</a>
+            {" "}— slower than a local tool (~2 min), but 100% transparent.{" "}
+            <a href={`https://github.com/${GH_OWNER}/${GH_REPO}`} target="_blank" rel="noreferrer">View source &amp; contribute →</a>
           </p>
         </div>
 
-        {/* Search */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 24, maxWidth: 600 }}>
+        {/* Search — centered */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 28, maxWidth: 540, margin: "0 auto 28px" }}>
           <input
             value={slug}
             onChange={e => setSlug(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !loading && analyze()}
             placeholder="Plugin slug, e.g. woocommerce"
             style={{
-              flex: 1, padding: "14px 18px", borderRadius: 12,
-              border: "1px solid #1e293b", background: "#1e293b",
-              color: "#f1f5f9", fontSize: 15, outline: "none",
-              transition: "border-color 0.2s",
+              flex: 1, padding: "13px 18px", borderRadius: 12,
+              border: "1px solid var(--border)", background: "var(--bg-card)",
+              color: "var(--text)", fontSize: 15, transition: "border-color 0.2s",
             }}
           />
           <button onClick={analyze} disabled={loading} style={{
-            padding: "14px 28px", borderRadius: 12, border: "none",
-            background: loading ? "#1e293b" : "#3b82f6",
-            color: loading ? "#475569" : "white",
-            fontWeight: 600, fontSize: 15,
-            cursor: loading ? "not-allowed" : "pointer",
-            minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "13px 26px", borderRadius: 12, border: "none",
+            background: loading ? "var(--bg-deep)" : "#3b82f6",
+            color: loading ? "var(--text-muted)" : "white",
+            fontWeight: 600, fontSize: 15, cursor: loading ? "not-allowed" : "pointer",
+            minWidth: 110, display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.2s",
           }}>
             {loading ? <><Spinner />Scanning…</> : "Analyze"}
           </button>
@@ -378,8 +389,8 @@ export default function App() {
         {/* Error */}
         {error && (
           <div className="fade" style={{
-            background: "#450a0a", border: "1px solid #7f1d1d",
-            borderRadius: 12, padding: "14px 18px", color: "#fca5a5", marginBottom: 24,
+            background: "#fef2f2", border: "1px solid #fecaca",
+            borderRadius: 12, padding: "14px 18px", color: "#b91c1c", marginBottom: 24,
           }}>
             {error}
           </div>
@@ -390,19 +401,31 @@ export default function App() {
           <div className="fade" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
             {/* Score + Meta */}
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 16 }}>
-              <div style={{
+            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 16 }}>
+              {/* Light mode score card */}
+              <div className="score-card-light card" style={{
                 background: scoreBg(report.score),
+                border: `1px solid ${scoreColor(report.score)}30`,
+                borderRadius: 16, padding: 24, textAlign: "center",
+              }}>
+                <div style={{ color: scoreColor(report.score), fontSize: 60, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
+                <div style={{ color: scoreColor(report.score), fontSize: 13, marginTop: 6, fontWeight: 600 }}>{scoreLabel(report.score)}</div>
+                <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>out of 100</div>
+              </div>
+              {/* Dark mode score card */}
+              <div className="score-card-dark" style={{
+                background: scoreDark(report.score),
                 border: `1px solid ${scoreColor(report.score)}40`,
                 borderRadius: 16, padding: 24, textAlign: "center",
               }}>
-                <div style={{ color: scoreColor(report.score), fontSize: 64, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
+                <div style={{ color: scoreColor(report.score), fontSize: 60, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
                 <div style={{ color: scoreColor(report.score), fontSize: 13, marginTop: 6, fontWeight: 600 }}>{scoreLabel(report.score)}</div>
-                <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>out of 100</div>
+                <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>out of 100</div>
               </div>
-              <div style={{ background: "#1e293b", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+
+              <div className="card" style={{ borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{report.slug}</div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>
+                <div className="text-muted" style={{ fontSize: 13 }}>
                   {scan.files_scanned} PHP files · min PHP {scan.min_php_version}
                 </div>
               </div>
@@ -421,28 +444,28 @@ export default function App() {
 
             {/* Security flags + Deprecated */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div style={{ background: "#1e293b", borderRadius: 16, padding: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#ef4444", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Security Flags</div>
+              <div className="card" style={{ borderRadius: 16, padding: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Security Flags</div>
                 {scan.security_flags.length === 0
-                  ? <span style={{ color: "#22c55e", fontSize: 14 }}>✓ None found</span>
-                  : scan.security_flags.map(f => <Pill key={f} label={f} color="#ef4444" />)
+                  ? <span style={{ color: "#16a34a", fontSize: 14 }}>✓ None found</span>
+                  : scan.security_flags.map(f => <Pill key={f} label={f} color="#dc2626" />)
                 }
               </div>
-              <div style={{ background: "#1e293b", borderRadius: 16, padding: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#f59e0b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Deprecated Functions</div>
+              <div className="card" style={{ borderRadius: 16, padding: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#d97706", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Deprecated Functions</div>
                 {scan.deprecated_functions.length === 0
-                  ? <span style={{ color: "#22c55e", fontSize: 14 }}>✓ None found</span>
-                  : scan.deprecated_functions.map(f => <Pill key={f} label={f} color="#f59e0b" />)
+                  ? <span style={{ color: "#16a34a", fontSize: 14 }}>✓ None found</span>
+                  : scan.deprecated_functions.map(f => <Pill key={f} label={f} color="#d97706" />)
                 }
               </div>
             </div>
 
             {/* Findings */}
-            <Collapsible title="Semgrep" count={scan.semgrep_findings?.length ?? 0} color="#ef4444">
-              <FindingsTable findings={scan.semgrep_findings ?? []} color="#ef4444" />
+            <Collapsible title="Semgrep" count={scan.semgrep_findings?.length ?? 0} color="#dc2626">
+              <FindingsTable findings={scan.semgrep_findings ?? []} color="#dc2626" />
             </Collapsible>
-            <Collapsible title="PHPCS" count={scan.phpcs_findings?.length ?? 0} color="#f59e0b">
-              <FindingsTable findings={scan.phpcs_findings ?? []} color="#f59e0b" />
+            <Collapsible title="PHPCS" count={scan.phpcs_findings?.length ?? 0} color="#d97706">
+              <FindingsTable findings={scan.phpcs_findings ?? []} color="#d97706" />
             </Collapsible>
 
           </div>
