@@ -219,7 +219,7 @@ function StatusBanner({ status }: { status: AnalysisStatus }) {
               color: i < currentIdx ? "#16a34a" : i === currentIdx ? "#3b82f6" : "var(--text-faint)",
             }}>
               {i < currentIdx ? "✓ " : ""}
-              {step === "queued" ? "Queued" : step === "running" ? "Running (~2 min)" : "Done"}
+              {step === "queued" ? "Queued" : step === "running" ? "Running (~5 min)" : "Done"}
             </span>
             {i < steps.length - 1 && <span style={{ color: "var(--border)" }}>→</span>}
           </span>
@@ -354,7 +354,7 @@ export default function App() {
             AI-powered security &amp; quality analysis for WordPress plugins.
             Runs entirely on{" "}
             <a href={`https://github.com/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml`} target="_blank" rel="noreferrer">GitHub Actions</a>
-            {" "}— slower than a local tool (~2 min), but 100% transparent.{" "}
+            {" "}— slower than a local tool (~5 min), but 100% transparent.{" "}
             <a href={`https://github.com/${GH_OWNER}/${GH_REPO}`} target="_blank" rel="noreferrer">View source &amp; contribute →</a>
           </p>
         </div>
