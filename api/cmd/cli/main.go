@@ -72,7 +72,10 @@ func main() {
 
 	if jsonMode {
 		// AI Summary
-		summary, _ := ai.Summarize(slug, result, score)
+		summary, aiErr := ai.Summarize(slug, result, score)
+		if aiErr != nil {
+			fmt.Fprintf(os.Stderr, "AI warning: %v\n", aiErr)
+		}
 		out := jsonOutput{
 			Slug:    slug,
 			Score:   score,

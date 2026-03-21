@@ -29,8 +29,7 @@ jobs:
 
       - name: Install PHPCS + WordPress Coding Standards
         run: |
-          composer global require squizlabs/php_codesniffer
-          composer global require wp-coding-standards/wpcs
+          composer global require "squizlabs/php_codesniffer:^3.13" "wp-coding-standards/wpcs:^3.1" --no-interaction
           ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
         continue-on-error: true
 
