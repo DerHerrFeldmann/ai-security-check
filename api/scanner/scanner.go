@@ -36,11 +36,22 @@ type Finding struct {
 
 // WordPress-specific sanitization functions that indicate safe code
 var wpSanitizationFuncs = []string{
+	// Type casting / numeric
 	"absint", "intval", "floatval",
-	"sanitize_text_field", "sanitize_email", "sanitize_key",
-	"sanitize_url", "sanitize_user", "sanitize_file_name",
+	// Sanitization
+	"sanitize_text_field", "sanitize_textarea_field", "sanitize_email",
+	"sanitize_key", "sanitize_url", "sanitize_user", "sanitize_file_name",
+	"sanitize_html_class", "sanitize_title", "sanitize_mime_type",
+	"wp_kses", "wp_kses_post", "wp_kses_allowed_html",
+	"wp_strip_all_tags", "wp_unslash",
+	// Escaping
 	"esc_sql", "esc_url", "esc_attr", "esc_html", "esc_js",
+	"esc_attr__", "esc_html__", "esc_attr_e", "esc_html_e",
+	"esc_textarea", "esc_xml",
+	// Nonce / capability checks
 	"wp_verify_nonce", "check_admin_referer", "check_ajax_referer",
+	"current_user_can", "user_can", "is_user_logged_in",
+	// DB
 	`\$wpdb->prepare`,
 }
 
