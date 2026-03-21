@@ -352,7 +352,7 @@ export default function App() {
           <p className="text-muted" style={{ marginTop: 10, fontSize: 15, lineHeight: 1.7, maxWidth: 580, margin: "10px auto 0" }}>
             AI-powered security &amp; quality analysis for WordPress plugins.
             Runs entirely on{" "}
-            <a href={`https://github.com/${GH_OWNER}/${GH_REPO}/actions`} target="_blank" rel="noreferrer">GitHub Actions</a>
+            <a href={`https://github.com/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml`} target="_blank" rel="noreferrer">GitHub Actions</a>
             {" "}— slower than a local tool (~2 min), but 100% transparent.{" "}
             <a href={`https://github.com/${GH_OWNER}/${GH_REPO}`} target="_blank" rel="noreferrer">View source &amp; contribute →</a>
           </p>
