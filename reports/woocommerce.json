@@ -6,13 +6,10 @@
     "js_files_scanned": 595,
     "deprecated_functions": [],
     "security_flags": [
-      "SQL without prepare",
       "system()",
       "base64_decode",
       "[semgrep] javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
       "[semgrep] typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-      "[semgrep] php.lang.security.injection.tainted-sql-string.tainted-sql-string",
-      "[semgrep] php.lang.security.injection.tainted-filename.tainted-filename",
       "[semgrep] php.lang.security.injection.echoed-request.echoed-request"
     ],
     "external_calls": 40,
@@ -27,16 +24,12 @@
     ],
     "suspicious_files": [
       {
-        "file": "woocommerce/includes/admin/class-wc-admin-api-keys-table-list.php",
-        "content": "\u003c?php\n/**\n * WooCommerce API Keys Table List\n *\n * @package WooCommerce\\Admin\n * @version 2.4.0\n */\n\ndefined( 'ABSPATH' ) || exit;\n\nif ( ! class_exists( 'WP_List_Table' ) ) {\n\trequire_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';\n}\n\n/**\n * API Keys table list class.\n */\nclass WC_Admin_API_Keys_Table_List extends WP_List_Table {\n\n\t/**\n\t * Initialize the API key table list.\n\t */\n\tpublic function __construct() {\n\t\tparent::__construct(\n\t\t\tarray(\n\t\t\t\t'singular' =\u003e 'key',\n\t\t\t\t'plural'   =\u003e 'keys',\n\t\t\t\t'ajax'     =\u003e false,\n\t\t\t)\n\t\t);\n\t}\n\n\t/**\n\t * No items found text.\n\t */\n\tpublic function no_items() {\n\t\tesc_html_e( 'No keys found.', 'woocommerce' );\n\t}\n\n\t/**\n\t * Get list columns.\n\t *\n\t * @return array\n\t */\n\tpublic function get_columns() {\n\t\treturn array(\n\t\t\t'cb'            =\u003e '\u003cinput type=\"checkbox\" /\u003e',\n\t\t\t'title'         =\u003e __( 'Description', 'woocommerce' ),\n\t\t\t'truncated_key' =\u003e __( 'Consumer key ending in', 'woocommerce' ),\n\t\t\t'user'          =\u003e __( 'User', 'woocommerce' ),\n\t\t\t'permissions'   =\u003e __( 'Permissions', 'woocommerce' ),\n\t\t\t'last_access'   =\u003e __( 'Last access', 'woocommerce' ),\n\t\t);\n\t}\n\n\t/**\n\t * Column cb.\n\t *\n\t * @param  array $key Key data.\n\t * @return string\n\t */\n\tpublic function column_cb( $key ) {\n\t\treturn sprintf( '\u003cinput type=\"checkbox\" name=\"key[]\" value=\"%1$s\" /\u003e', $key['key_id'] );\n\t}\n\n\t/**\n\t * Return title column.\n\t *\n\t * @param  array $key Key data.\n\t * @return string\n\t */\n\tpublic function column_title( $key ) {\n\t\t$url     = admin_url( 'admin.php?page=wc-settings\u0026tab=advanced\u0026section=keys\u0026edit-key=' . $key['key_id'] );\n\t\t$user_id = intval( $key['user_id'] );\n\n\t\t// Check if current user can edit other users or if it's the same user.\n\t\t$can_edit = current_user_can( 'edit_user', $user_id ) || get_current_user_id() === $user_id;\n\n\t\t$output = '\u003cstrong\u003e';\n\t\tif ( $can_edit ) {\n\t\t\t$output .= '\u003ca href=\"' . esc_url( $url ) . '\" class=\"row-title\"\u003e';\n\t\t}\n\t\tif ( empty( $key['description'] ) ) {\n\t\t\t$output .= esc_html__( 'API key', 'woocommerce' );\n\t\t} else {\n\t\t\t$output .= esc_html( $key['description'] );\n\t\t}\n\t\tif ( $can_edit ) {\n\t\t\t$output .= '\u003c/a\u003e';\n\t\t}\n\t\t$output .= '\u003c/strong\u003e';\n\n\t\t// Get actions.\n\t\t$actions = array(\n\t\t\t/* translators: %s: API key ID. */\n\t\t\t'id' =\u003e sprintf( __( 'ID: %d', 'woocommerce' ), $key['key_id'] ),\n\t\t);\n\n\t\tif ( $can_edit ) {\n\t\t\t$actions['edit']  = '\u003ca href=\"' . esc_url( $url ) . '\"\u003e' . __( 'View/Edit', 'woocommerce' ) . '\u003c/a\u003e';\n\t\t\t$actions['trash'] = '\u003ca class=\"submitdelete\" aria-label=\"' . esc_attr__( 'Revoke API key', 'woocommerce' ) . '\" href=\"' . esc_url(\n\t\t\t\twp_nonce_url(\n\t\t\t\t\tadd_query_arg(\n\t\t\t\t\t\tarray(\n\t\t\t\t\t\t\t'revoke-key' =\u003e $key['key_id'],\n\t\t\t\t\t\t),\n\t\t\t\t\t\tadmin_url( 'admin.php?page=wc-settings\u0026tab=advanced\u0026section=keys' )\n\t\t\t\t\t),\n\t\t\t\t\t'revoke'\n\t\t\t\t)\n\t\t\t) . '\"\u003e' . esc_html__( 'Revoke', 'woocommerce' ) . '\u003c/a\u003e';\n\t\t}\n\n\t\t$row_actions = array();\n\n\t\tforeach ( $actions as $action =\u003e $link ) {\n\t\t\t$row_actions[] = '\u003cspan class=\"' . esc_attr( $action ) . '\"\u003e' . $link . '\u003c/span\u003e';\n\t\t}\n\n\t\t$output .= '\u003cdiv class=\"row-actions\"\u003e' . implode( ' | ', $row_actions ) . '\u003c/div\u003e';"
-      },
-      {
         "file": "woocommerce/src/Internal/Admin/Logging/Settings.php",
         "content": "\u003c?php\ndeclare( strict_types=1 );\n\nnamespace Automattic\\WooCommerce\\Internal\\Admin\\Logging;\n\nuse Automattic\\Jetpack\\Constants;\nuse Automattic\\WooCommerce\\Internal\\Admin\\Logging\\FileV2\\File;\nuse Automattic\\WooCommerce\\Internal\\Admin\\Logging\\LogHandlerFileV2;\nuse Automattic\\WooCommerce\\Internal\\Admin\\Logging\\FileV2\\FileController;\nuse Automattic\\WooCommerce\\Internal\\Utilities\\FilesystemUtil;\nuse Automattic\\WooCommerce\\Proxies\\LegacyProxy;\nuse Exception;\nuse WC_Admin_Settings;\nuse WC_Log_Handler_DB, WC_Log_Handler_File, WC_Log_Levels;\nuse WP_Filesystem_Direct;\n\n/**\n * Settings class.\n */\nclass Settings {\n\n\t/**\n\t * Default values for logging settings.\n\t *\n\t * @const array\n\t */\n\tprivate const DEFAULTS = array(\n\t\t'logging_enabled'       =\u003e true,\n\t\t'default_handler'       =\u003e LogHandlerFileV2::class,\n\t\t'retention_period_days' =\u003e 30,\n\t\t'level_threshold'       =\u003e 'none',\n\t);\n\n\t/**\n\t * The prefix for settings keys used in the options table.\n\t *\n\t * @const string\n\t */\n\tprivate const PREFIX = 'woocommerce_logs_';\n\n\t/**\n\t * Class Settings.\n\t */\n\tpublic function __construct() {\n\t\tadd_action( 'wc_logs_load_tab', array( $this, 'save_settings' ) );\n\t}\n\n\t/**\n\t * Get the directory for storing log files.\n\t *\n\t * The `wp_upload_dir` function takes into account the possibility of multisite, and handles changing\n\t * the directory if the context is switched to a different site in the network mid-request.\n\t *\n\t * @param bool $create_dir Optional. True to attempt to create the log directory if it doesn't exist. Default true.\n\t *\n\t * @return string The full directory path, with trailing slash.\n\t */\n\tpublic static function get_log_directory( bool $create_dir = true ): string {\n\t\tif ( true === Constants::get_constant( 'WC_LOG_DIR_CUSTOM' ) ) {\n\t\t\t$dir = Constants::get_constant( 'WC_LOG_DIR' );\n\t\t} else {\n\t\t\t$upload_dir = wc_get_container()-\u003eget( LegacyProxy::class )-\u003ecall_function( 'wp_upload_dir', null, $create_dir );\n\n\t\t\t/**\n\t\t\t * Filter to change the directory for storing WooCommerce's log files.\n\t\t\t *\n\t\t\t * @param string $dir The full directory path, with trailing slash.\n\t\t\t *\n\t\t\t * @since 8.8.0\n\t\t\t */\n\t\t\t$dir = apply_filters( 'woocommerce_log_directory', $upload_dir['basedir'] . '/wc-logs/' );\n\t\t}\n\n\t\t$dir = trailingslashit( $dir );\n\n\t\tif ( true === $create_dir ) {\n\t\t\t$realpath = realpath( $dir );\n\t\t\tif ( false === $realpath ) {\n\t\t\t\t$result = wp_mkdir_p( $dir );\n\n\t\t\t\tif ( true === $result ) {\n\t\t\t\t\t// Create infrastructure to prevent listing contents of the logs directory.\n\t\t\t\t\ttry {\n\t\t\t\t\t\t$filesystem = FilesystemUtil::get_wp_filesystem();\n\t\t\t\t\t\t$filesystem-\u003eput_contents( $dir . '.htaccess', 'deny from all' );\n\t\t\t\t\t\t$filesystem-\u003eput_contents( $dir . 'index.html', '' );\n\t\t\t\t\t} catch ( Exception $exception ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch\n\t\t\t\t\t\t// Creation failed.\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\treturn $dir;\n\t}\n\n\t/**\n\t * The definitions used by WC_Admin_Settings to render and save settings controls.\n\t *\n\t * @return array\n\t */\n\tprivate function get_settings_definitions(): array {\n\t\t$settings = array(\n\t\t\t'start'                 =\u003e array(\n\t\t\t\t'title' =\u003e __( 'Logs settings', 'woocommerce' ),\n\t\t\t\t'id'    =\u003e self::PREFIX . 'settings',\n\t\t\t\t'type'  =\u003e 'title',\n\t\t\t),\n\t\t\t'logging_enabled'       =\u003e array(\n\t\t\t\t'title'    =\u003e __( 'Logger', 'woocommerce' ),\n\t\t\t\t'desc'     =\u003e __( 'Enable logging', 'woocommerce' ),\n\t\t\t\t'id'       =\u003e self::PREFIX . 'logging_enabled',\n\t\t\t\t'type'     =\u003e 'checkbox',\n\t\t\t\t'value'    =\u003e $this-\u003elogging_is_enabled() ? 'yes' : 'no',\n\t\t\t\t'default'  =\u003e self::DEFAULTS['logging_enabled'] ? 'yes' : 'no',\n\t\t\t\t'autoload' =\u003e false,\n\t\t\t),\n\t\t\t'default_handler'       =\u003e array(),\n\t\t\t'retention_period_days' =\u003e array(),\n\t\t\t'level_threshold'       =\u003e array(),"
       },
       {
-        "file": "woocommerce/src/StoreApi/Utilities/JsonWebToken.php",
-        "content": "\u003c?php\n\nnamespace Automattic\\WooCommerce\\StoreApi\\Utilities;\n\n/**\n * JsonWebToken class.\n *\n * Simple Json Web Token generator \u0026 verifier static utility class, currently supporting only HS256 signatures.\n */\nfinal class JsonWebToken {\n\n\t/**\n\t * JWT header type.\n\t *\n\t * @var string\n\t */\n\tprivate static $type = 'JWT';\n\n\t/**\n\t * JWT algorithm to generate signature.\n\t *\n\t * @var string\n\t */\n\tprivate static $algorithm = 'HS256';\n\n\t/**\n\t * Generates a token from provided data and secret.\n\t *\n\t * @param array  $payload Payload data.\n\t * @param string $secret The secret used to generate the signature.\n\t *\n\t * @return string\n\t */\n\tpublic static function create( array $payload, string $secret ) {\n\t\t$header    = self::to_base_64_url( self::generate_header() );\n\t\t$payload   = self::to_base_64_url( self::generate_payload( $payload ) );\n\t\t$signature = self::to_base_64_url( self::generate_signature( $header . '.' . $payload, $secret ) );\n\n\t\treturn $header . '.' . $payload . '.' . $signature;\n\t}\n\n\t/**\n\t * Validates a provided token against the provided secret.\n\t * Checks for format, valid header for our class, expiration claim validity and signature.\n\t * https://datatracker.ietf.org/doc/html/rfc7519#section-7.2\n\t *\n\t * @param string $token Full token string.\n\t * @param string $secret The secret used to generate the signature.\n\t *\n\t * @return bool\n\t */\n\tpublic static function validate( string $token, string $secret ) {\n\t\tif ( ! self::shallow_validate( $token ) ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$parts = self::get_parts( $token );\n\n\t\t/**\n\t\t * Check if the token is based on our secret.\n\t\t */\n\t\t$encoded_regenerated_signature = self::to_base_64_url(\n\t\t\tself::generate_signature( $parts-\u003eheader_encoded . '.' . $parts-\u003epayload_encoded, $secret )\n\t\t);\n\n\t\treturn hash_equals( $encoded_regenerated_signature, $parts-\u003esignature_encoded );\n\t}\n\n\t/**\n\t * Shallow validate a token, it does not check the signature or expiration, but it checks the structure and expiry.\n\t *\n\t * @param string $token Full token string.\n\t *\n\t * @return bool\n\t */\n\tpublic static function shallow_validate( string $token ) {\n\t\tif ( ! $token ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t/**\n\t\t * Confirm the structure of a JSON Web Token, it has three parts separated\n\t\t * by dots and complies with Base64URL standards.\n\t\t */\n\t\tif ( preg_match( '/^[a-zA-Z\\d\\-_=]+\\.[a-zA-Z\\d\\-_=]+\\.[a-zA-Z\\d\\-_=]+$/', $token ) !== 1 ) {\n\t\t\treturn false;\n\t\t}\n\n\t\t$parts = self::get_parts( $token );\n\n\t\t/**\n\t\t * Check if header declares a supported JWT by this class.\n\t\t */\n\t\tif (\n\t\t\t! is_object( $parts-\u003eheader ) ||\n\t\t\t! property_exists( $parts-\u003eheader, 'typ' ) ||\n\t\t\t! property_exists( $parts-\u003eheader, 'alg' ) ||\n\t\t\tself::$type !== $parts-\u003eheader-\u003etyp ||\n\t\t\tself::$algorithm !== $parts-\u003eheader-\u003ealg\n\t\t) {\n\t\t\treturn false;\n\t\t}\n\n\t\t/**\n\t\t * Check if token is expired.\n\t\t */\n\t\tif ( ! property_exists( $parts-\u003epayload, 'exp' ) || time() \u003e (int) $parts-\u003epayload-\u003eexp ) {\n\t\t\treturn false;\n\t\t}\n\n\t\treturn true;\n\t}\n\n\t/**\n\t * Returns the decoded/encoded header, payload and signature from a token string.\n\t *\n\t * @param string $token Full token string.\n\t *\n\t * @return object\n\t */"
+        "file": "woocommerce/vendor/opis/json-schema/src/Resolvers/ContentEncodingResolver.php",
+        "content": "\u003c?php\n/* ============================================================================\n * Copyright 2020 Zindex Software\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *    http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n * ============================================================================ */\n\nnamespace Opis\\JsonSchema\\Resolvers;\n\nuse Opis\\JsonSchema\\ContentEncoding;\n\nclass ContentEncodingResolver\n{\n    /** @var callable[]|ContentEncoding[] */\n    protected array $list;\n\n    /** @var callable|ContentEncoding|null */\n    protected $defaultEncoding = null;\n\n    /**\n     * @param callable[]|ContentEncoding[] $list\n     * @param callable|ContentEncoding|null $defaultEncoding\n     */\n    public function __construct(array $list = [], $defaultEncoding = null)\n    {\n        $list += [\n            'binary' =\u003e self::class . '::DecodeBinary',\n            'base64' =\u003e self::class . '::DecodeBase64',\n            'quoted-printable' =\u003e self::class . '::DecodeQuotedPrintable',\n        ];\n\n        $this-\u003elist = $list;\n        $this-\u003edefaultEncoding = $defaultEncoding;\n    }\n\n    /**\n     * @param string $name\n     * @return callable|ContentEncoding|string|null\n     */\n    public function resolve(string $name)\n    {\n        return $this-\u003elist[$name] ?? $this-\u003edefaultEncoding;\n    }\n\n    /**\n     * @param string $name\n     * @param ContentEncoding $encoding\n     * @return ContentEncodingResolver\n     */\n    public function register(string $name, ContentEncoding $encoding): self\n    {\n        $this-\u003elist[$name] = $encoding;\n\n        return $this;\n    }\n\n    /**\n     * @param string $name\n     * @param callable $encoding\n     * @return ContentEncodingResolver\n     */\n    public function registerCallable(string $name, callable $encoding): self\n    {\n        $this-\u003elist[$name] = $encoding;\n\n        return $this;\n    }\n\n    /**\n     * @param string $name\n     * @return bool\n     */\n    public function unregister(string $name): bool\n    {\n        if (isset($this-\u003elist[$name])) {\n            unset($this-\u003elist[$name]);\n\n            return true;\n        }\n\n        return false;\n    }\n\n    /**\n     * @param callable|ContentEncoding|null $handler\n     * @return $this\n     */\n    public function setDefaultHandler($handler): self\n    {\n        $this-\u003edefaultEncoding = $handler;\n        return $this;\n    }\n\n    public function __serialize(): array\n    {\n        return [\n            'list' =\u003e $this-\u003elist,\n            'defaultEncoding' =\u003e $this-\u003edefaultEncoding,\n        ];\n    }\n\n    public function __unserialize(array $data): void\n    {\n        $this-\u003elist = $data['list'];\n        $this-\u003edefaultEncoding = $data['defaultEncoding'] ?? null;\n    }\n\n    public static function DecodeBinary(string $value): ?string\n    {\n        return $value;"
       }
     ],
     "semgrep_findings": [
@@ -168,105 +161,6 @@
       },
       {
         "tool": "semgrep",
-        "file": "woocommerce/assets/client/admin/settings-editor/index.js",
-        "line": 2,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/admin/settings-editor/index.js",
-        "line": 2,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/admin/settings-editor/index.js",
-        "line": 2,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/admin/settings-editor/index.js",
-        "line": 2,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/admin/settings-editor/index.js",
-        "line": 2,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/admin/settings-editor/index.js",
-        "line": 2,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/all-products.js",
-        "line": 7,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/all-products.js",
-        "line": 7,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/all-reviews.js",
-        "line": 1,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/cart.js",
-        "line": 8,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/cart.js",
-        "line": 8,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
         "file": "woocommerce/assets/client/blocks/category-description.js",
         "line": 1,
         "severity": "WARNING",
@@ -294,110 +188,11 @@
       },
       {
         "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/checkout-frontend.js",
-        "line": 5,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/checkout-frontend.js",
-        "line": 5,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/legacy-template.js",
-        "line": 4,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/mini-cart-component-frontend.js",
-        "line": 3,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/mini-cart-contents.js",
-        "line": 9,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/mini-cart-contents.js",
-        "line": 9,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
         "file": "woocommerce/assets/client/blocks/product-description.js",
         "line": 1,
         "severity": "WARNING",
         "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
         "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/reviews-by-category.js",
-        "line": 12,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/reviews-by-product.js",
-        "line": 9,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/assets/client/blocks/reviews-frontend.js",
-        "line": 1,
-        "severity": "WARNING",
-        "message": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use dangerouslySetInnerHTML, consider using a sanitization library such as DOMPurify to sanitize your HTML.",
-        "rule": "typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/includes/admin/class-wc-admin-api-keys-table-list.php",
-        "line": 265,
-        "severity": "ERROR",
-        "message": "User data flows into this manually-constructed SQL string. User data can be safely inserted into SQL strings using prepared statements or an object-relational mapper (ORM). Manually-constructed SQL strings is a possible indicator of SQL injection, which could let an attacker steal or manipulate data from the database. Instead, use prepared statements (`$mysqli-\u003eprepare(\"INSERT INTO test(id, label) VALUES (?, ?)\");`) or a safe library.",
-        "rule": "php.lang.security.injection.tainted-sql-string.tainted-sql-string",
-        "possible_false_positive": false
-      },
-      {
-        "tool": "semgrep",
-        "file": "woocommerce/includes/class-wc-download-handler.php",
-        "line": 119,
-        "severity": "WARNING",
-        "message": "File name based on user input risks server-side request forgery.",
-        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
         "possible_false_positive": false
       },
       {
@@ -412,5 +207,5 @@
     ],
     "phpcs_findings": []
   },
-  "summary": "# WooCommerce Plugin Security Review\n\n## Overall Assessment\nWooCommerce is a widely-used e-commerce plugin for WordPress, but this specific security scan reveals several concerning vulnerabilities. The plugin's score of 41/100 indicates significant risks, especially with unsafe JavaScript practices and PHP code concerns. Due to the presence of multiple medium-to-critical vulnerabilities, this version of WooCommerce is **not safe to install** without further reviews and updates to address these issues.\n\n## Issues Found\n\n### Wildcard `postMessage` Misconfiguration\n**What it is:** This vulnerability occurs when JavaScript allows communication between windows or frames (`postMessage`) without restricting the target origin. Attackers could hijack the communication and inject malicious code into your site or steal sensitive data.\n\n**Why it’s dangerous:** This can allow hackers to perform unauthorized actions such as stealing login credentials or sensitive data. It also increases the site's susceptibility to cross-site scripting (XSS) attacks, which can compromise user accounts, admin access, or lead to malware infections.\n\n**Affected files/lines:** \n- `woocommerce/assets/client/admin/chunks/3135.js` (Line 2, multiple locations)\n\n**Severity:** **High**  \nThe flaw indicates the potential for a security exploit, especially in admin-related functionality, which is crucial for managing crucial e-commerce data.\n\n---\n\n### Use of `dangerouslySetInnerHTML` in React Components\n**What it is:** This issue arises when a React component directly injects HTML. If this data isn't sanitized, it can lead to XSS attacks, allowing an attacker to run malicious scripts on the website.\n\n**Why it’s dangerous:** Attackers could inject scripts that steal customer data, redirect traffic, or deface your site. For an e-commerce platform, where sensitive customer and payment information is handled, the consequences of such an attack are severe.\n\n**Affected files/lines:**\n- `woocommerce/assets/client/admin/experimental/index.js` (Line 2, multiple instances)\n\n**Severity:** **Critical**  \n34 occurrences were detected, making this widespread and especially concerning.\n\n---\n\n### Unsafely Constructed SQL Queries\n**What it is:** SQL queries are used to interact with your database. If they're not safely prepared, attackers can execute \"SQL Injection\" attacks, which could give them unauthorized access to sensitive data like customer details, orders, or admin credentials.\n\n**Why it’s dangerous:** SQL injection attacks could lead to data breaches, deletion of critical content, or administrative account compromises.\n\n**Affected files/lines:**\n- `woocommerce/includes/admin/class-wc-admin-api-keys-table-list.php` (Line 265)\n\n**Severity:** **Critical**  \nSQL injection vulnerabilities are some of the most dangerous, especially for e-commerce websites handling sensitive data.\n\n---\n\n### Unsafe Use of User-Supplied File Names\n**What it is:** The plugin uses a file name in its code without validation (e.g., checking if it's safe). This can allow attackers to upload or manipulate files on your server.\n\n**Why it’s dangerous:** Unauthorized file uploads can lead to an attacker uploading malware or backdoor scripts that could compromise your site or server.\n\n**Affected files/lines:**\n- `woocommerce/includes/class-wc-download-handler.php` (Line 119)\n\n**Severity:** **High**  \nIf exploited, attackers can upload malicious files and potentially gain control of your server.\n\n---\n\n### Echoing Unsanitized User Input\n**What it is:** This happens when data submitted by users (e.g., via forms) is displayed without being properly checked and cleaned. If the input includes malicious code, it will be executed by anyone visiting the affected page.\n\n**Why it’s dangerous:** Unsanitized input opens the door for XSS attacks that could steal cookies, hijack sessions, or redirect users to unsafe websites.\n\n**Affected files/lines:**\n- `woocommerce/src/Internal/Features/FeaturesController.php` (Line 1683)\n\n**Severity:** **High**  \nSince this vulnerability handles user input, it could make your site a target for attacks seeking to exploit your visitors and administrators.\n\n---\n\n### Use of Unsafe Functions (`system()`, `base64_decode`)\n**What it is:** Functions like `system()` allow direct command execution on your server, which could be exploited to run malicious commands. Similarly, `base64_decode` is often used by attackers to hide malicious code and decode it when executed.\n\n**Why it’s dangerous:** If inputs to `system()` are not properly controlled, attackers could execute arbitrary commands with your server's permissions. While `base64_decode` isn’t inherently unsafe, its presence is often a sign of poor coding practices that could increase security risks.\n\n**Affected files/lines:** Specific locations were not provided, but presence in PHP indicates potential exposure.\n\n**Severity:** **Medium**  \nAlthough their mere presence doesn't guarantee danger, these functions are often targeted by attackers.\n\n---\n\n### High Number of External Calls\n**What it is:** The plugin makes 40 external calls to third-party services or scripts, which could potentially introduce security vulnerabilities. If any of these services are not secure or become compromised, it could open your site to attacks.\n\n**Why it’s dangerous:** Third-party services can be weak points for exploitation, allowing attackers to inject malicious code or compromise your security indirectly.\n\n**Severity:** **Medium**  \nWhile external calls aren't necessarily dangerous, they increase the attack vector, particularly if they're not securely implemented and monitored.\n\n---\n\n## Recommendation\n\nGiven the high number of vulnerabilities and the critical issues with SQL injection, unsanitized input, and JavaScript practices, the **WooCommerce plugin in its current version is not safe to install** on your WordPress site. These vulnerabilities expose both your site and your customers to significant security risks.\n\n### Steps to Take:\n1. **Do Not Install This Version:** Until these issues are resolved, avoid using this version of WooCommerce.\n\n2. **Contact WooCommerce Support:** Reach out to WooCommerce’s support team to inquire about updates or patches specifically addressing the vulnerabilities listed.\n\n3. **Consider Alternatives:** If these issues are not addressed promptly, consider looking for an alternative e-commerce plugin that meets your security requirements.\n\n4. **Monitor Future Updates:** Keep track of WooCommerce's release notes to confirm that these issues are patched in a future update before installing it.\n\n5. **Enable Regular Security Scans:** Use WordPress security plugins like Wordfence or Sucuri to regularly scan your site and plugins for vulnerabilities.\n\nYour site’s security is crucial, especially for e-commerce operations dealing with sensitive data. Make sure you only install plugins that are actively maintained and free of critical vulnerabilities."
+  "summary": "## Overall Assessment\nThe WooCommerce plugin has been flagged with a security score of 41/100, indicating multiple vulnerabilities that could pose risks to your website's safety and stability. While WooCommerce is a widely-used and reputable plugin, this particular scan has identified serious concerns, including code that could potentially make your site vulnerable to hacking attempts or misuse of sensitive data. Due to these findings, the plugin **should not be installed or used** in its current state, unless these issues are addressed.\n\n---\n\n## Issues Found\n\n### 1. **Echoing User Input Without Validation (PHP Injection)**\n- **What is this?**  \nOne of the most critical vulnerabilities identified in the plugin involves improper handling of user-provided input. Specifically, data provided by users is being output directly to the page without proper validation or escaping. If an attacker crafts malicious input, they could use this vulnerability to inject harmful code, such as JavaScript, into your site.\n- **Why is it dangerous?**  \nThis type of vulnerability makes your website susceptible to Cross-Site Scripting (XSS) attacks. An attacker could steal user information (like passwords or sensitive personal data), hijack user accounts, or trick users into performing unintended actions.\n- **Where is it found?**  \nExample location: `woocommerce/src/Internal/Features/FeaturesController.php:1683`.\n- **Severity:** **Critical**  \nThis is a high-severity issue and must be resolved before the plugin is deemed safe to use.\n\n---\n\n### 2. **Weak PostMessage Security in JavaScript (Wildcard Messages)**  \n- **What is this?**  \nThe plugin’s JavaScript code uses a `postMessage` API call that accepts messages from any origin. This \"wildcard\" setup makes it possible for attackers to inject content or malicious commands into the communication.\n- **Why is it dangerous?**  \nAn insecure `postMessage` implementation can allow attackers to abuse your website by injecting content or hijacking user interactions. This could expose sensitive information or cause malicious actions on your users' devices.\n- **Where is it found?**  \nExample locations:  \n  - `woocommerce/assets/client/admin/chunks/3135.js:2`  \n  - (several other instances in the same file).  \n- **Severity:** **High**  \nThis issue is not as critical as PHP injection but still presents a significant risk, especially for websites that rely heavily on JavaScript for interactive components.\n\n---\n\n### 3. **Dangerous Use of `dangerouslySetInnerHTML` in React Components**  \n- **What is this?**  \nThe React components used in the plugin rely on `dangerouslySetInnerHTML`. This method intentionally bypasses React’s protection against Cross-Site Scripting (XSS) and renders raw HTML to the page. If any malicious or unverified HTML gets passed into the page, it could execute harmful scripts on your site.\n- **Why is it dangerous?**  \nAttackers could exploit this vulnerability to inject malicious code into your website. This increases the risk for data theft, account compromise, malware distribution, and website defacement.\n- **Where is it found?**  \nExample locations:  \n  - `woocommerce/assets/client/admin/experimental/index.js:2`  \n  - (multiple instances across the codebase).  \n- **Severity:** **High**  \nEven though it affects only specific parts of the front-end, this issue can still pose serious hazards and should not be overlooked.\n\n---\n\n### 4. **Potential Use of Dangerous PHP Functions (`system()` and `base64_decode`)**  \n- **What is this?**  \nThe plugin contains calls to PHP functions like `system()` and `base64_decode`, which are often misused in malicious ways. These functions can execute system-level commands or decode strings that may contain harmful payloads.\n- **Why is it dangerous?**  \nIf these functions are not properly secured, they could allow attackers to execute commands on your server or decode malicious data that has been smuggled into your system.\n- **Where is it found?**  \nLines using `system()` and `base64_decode` were not explicitly identified in specific files here but were flagged in the security scan.\n- **Severity:** **Medium**  \nWhile not necessarily exploitable in every case, these functions are often associated with bad security practices and should be scrutinized for proper usage.\n\n---\n\n### 5. **Direct Database Access Without Validation**  \n- **What is this?**  \nThe plugin uses direct database queries and may not properly sanitize the data beforehand. This could leave your site susceptible to SQL Injection — one of the most common security vulnerabilities on the web.\n- **Why is it dangerous?**  \nSQL Injection could allow attackers to manipulate your database, steal private information, or even delete all of your data.\n- **Where is it found?**  \nSpecific queries were not identified in the current analysis, but this general practice was flagged in the scan.\n- **Severity:** **High**  \nDatabase security is crucial to keeping your site safe from attackers. Direct access to your database is extremely risky if not handled correctly.\n\n---\n\n## Recommendation\nHere are actionable steps you should take as the website administrator:\n\n1. **Do Not Install or Use this Version of WooCommerce.**  \n   Based on the current findings, the plugin has several critical vulnerabilities that make it unsafe for immediate use. Using this plugin in a production environment could expose your website to severe risks, including hacks or data breaches.\n\n2. **Check for Updates.**  \n   Look for an updated version of the WooCommerce plugin. Newer versions may contain security patches that address these issues. If an update exists, review its changelog or security notes to confirm that these problems have been fixed before proceeding with installation.\n\n3. **Report Issues to the Plugin Developer.**  \n   Contact WooCommerce’s support team or open a ticket with details of these vulnerabilities. Provide them with the exact findings so they can investigate and resolve these issues in a future version of the plugin.\n\n4. **Monitor for Security Patches.**  \n   Stay informed about updates to WooCommerce by subscribing to their release announcements or monitoring their official website. Don't use the plugin again until you’re confident all identified vulnerabilities have been resolved.\n\n5. **Consider a Temporary Alternative.**  \n   If WooCommerce is critical for your site, you may need to explore alternative eCommerce plugins as a temporary solution. Plugins such as Easy Digital Downloads or Shopify integration plugins could provide similar functionality with a stronger focus on security.\n\nBy addressing these recommendations, you can ensure that your WordPress site remains secure and protected from potential threats. Always prioritize security when installing third-party plugins, especially those that handle sensitive eCommerce operations."
 }
