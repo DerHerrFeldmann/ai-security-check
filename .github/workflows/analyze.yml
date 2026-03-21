@@ -41,7 +41,7 @@ jobs:
         working-directory: api
         run: go run ./cmd/cli -json "${{ inputs.plugin_slug }}" > "../reports/${{ inputs.plugin_slug }}.json"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.VITE_GH_TOKEN }}
           PHPCS_BIN: ~/.composer/vendor/bin/phpcs
 
       - name: Commit report
