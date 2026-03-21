@@ -294,12 +294,20 @@ export default function App() {
     if (!GH_TOKEN) { setError("No GitHub token configured. Set VITE_GH_TOKEN in the repo secrets."); return; }
     setStatus("queued"); setReport(null); setError(""); setFromCache(false);
     try {
-      // Check if cached report matches current WP.org version
+      // Check if cached report is still current
       const { currentVersion, cachedReport } = await checkCache(s);
-      if (currentVersion && cachedReport?.scan?.version && cachedReport.scan.version === currentVersion) {
+      const cacheHit =
+        cachedReport !== null &&
+        (
+          // WP.org version matches cached version
+          (currentVersion !== "" && cachedReport.scan?.version === currentVersion) ||
+          // WP.org API failed/blocked — trust cache rather than always re-scanning
+          currentVersion === ""
+        );
+      if (cacheHit) {
         setStatus("done");
         setFromCache(true);
-        setReport(cachedReport);
+        setReport(cachedReport!);
         return;
       }
       await dispatchWorkflow(s);
