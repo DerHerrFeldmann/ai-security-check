@@ -69,6 +69,7 @@ var wpSanitizationFuncs = []string{
 
 // Result holds everything found during a scan.
 type Result struct {
+	Version            string        `json:"version"`
 	FilesScanned       int           `json:"files_scanned"`
 	JSFilesScanned     int           `json:"js_files_scanned"`
 	DeprecatedFuncs    []string      `json:"deprecated_functions"`
@@ -137,6 +138,8 @@ func Analyze(slug string) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
+
+	result.Version = detectVersion(tmpDir, slug)
 
 	// Run external tools in parallel
 	semgrepCh := make(chan []Finding, 1)
@@ -339,6 +342,48 @@ func checkFalsePositive(f *Finding, tmpDir string) {
 			return
 		}
 	}
+}
+
+// detectVersion reads the plugin version from the main PHP file or readme.txt.
+func detectVersion(dir, slug string) string {
+	versionRe := regexp.MustCompile(`(?i)\*\s*Version:\s*(.+)`)
+	stableTagRe := regexp.MustCompile(`(?i)Stable tag:\s*(.+)`)
+
+	// Try {slug}/{slug}.php first (most common)
+	for _, candidate := range []string{
+		filepath.Join(dir, slug, slug+".php"),
+		filepath.Join(dir, slug, "readme.txt"),
+		filepath.Join(dir, slug, "README.txt"),
+	} {
+		b, err := os.ReadFile(candidate)
+		if err != nil {
+			continue
+		}
+		re := versionRe
+		if strings.HasSuffix(candidate, ".txt") {
+			re = stableTagRe
+		}
+		if m := re.FindSubmatch(b); len(m) > 1 {
+			return strings.TrimSpace(string(m[1]))
+		}
+	}
+
+	// Fallback: walk all PHP files in the plugin dir looking for Version header
+	var version string
+	filepath.Walk(filepath.Join(dir, slug), func(path string, info os.FileInfo, err error) error {
+		if err != nil || version != "" || info.IsDir() || !strings.HasSuffix(path, ".php") {
+			return nil
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		if m := versionRe.FindSubmatch(b); len(m) > 1 {
+			version = strings.TrimSpace(string(m[1]))
+		}
+		return nil
+	})
+	return version
 }
 
 // runSemgrep runs semgrep with PHP security rules against the extracted plugin dir.

@@ -1,0 +1,27 @@
+name: Clear Reports
+
+on:
+  workflow_dispatch:
+
+jobs:
+  clear:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Delete all reports
+        run: |
+          if ls reports/*.json 2>/dev/null | grep -q .; then
+            rm reports/*.json
+            git config user.name "WP Plugin Insight Bot"
+            git config user.email "bot@wp-plugin-insight"
+            git add reports/
+            git commit -m "chore: clear all cached reports"
+            git push
+          else
+            echo "No reports to delete."
+          fi

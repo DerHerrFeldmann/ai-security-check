@@ -17,6 +17,7 @@ interface Finding {
 }
 
 interface ScanResult {
+  version?: string;
   files_scanned: number;
   js_files_scanned: number;
   deprecated_functions: string[];
@@ -229,6 +230,18 @@ function StatusBanner({ status }: { status: AnalysisStatus }) {
   );
 }
 
+// --- Cache check ---
+async function checkCache(slug: string): Promise<{ currentVersion: string; cachedReport: Report | null }> {
+  const [wpRes, cached] = await Promise.allSettled([
+    fetch(`https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=${slug}`)
+      .then(r => r.ok ? r.json() : null),
+    fetchReport(slug).catch(() => null),
+  ]);
+  const currentVersion: string = wpRes.status === "fulfilled" && wpRes.value?.version ? wpRes.value.version : "";
+  const cachedReport: Report | null = cached.status === "fulfilled" ? cached.value : null;
+  return { currentVersion, cachedReport };
+}
+
 // --- GitHub API helpers ---
 async function dispatchWorkflow(slug: string) {
   const res = await fetch(
@@ -269,17 +282,26 @@ async function fetchReport(slug: string): Promise<Report> {
 
 // --- Main App ---
 export default function App() {
-  const [slug, setSlug]     = useState("");
-  const [status, setStatus] = useState<AnalysisStatus>("idle");
-  const [report, setReport] = useState<Report | null>(null);
-  const [error, setError]   = useState("");
+  const [slug, setSlug]         = useState("");
+  const [status, setStatus]     = useState<AnalysisStatus>("idle");
+  const [report, setReport]     = useState<Report | null>(null);
+  const [error, setError]       = useState("");
+  const [fromCache, setFromCache] = useState(false);
 
   async function analyze() {
     const s = slug.trim().toLowerCase();
     if (!s) return;
     if (!GH_TOKEN) { setError("No GitHub token configured. Set VITE_GH_TOKEN in the repo secrets."); return; }
-    setStatus("queued"); setReport(null); setError("");
+    setStatus("queued"); setReport(null); setError(""); setFromCache(false);
     try {
+      // Check if cached report matches current WP.org version
+      const { currentVersion, cachedReport } = await checkCache(s);
+      if (currentVersion && cachedReport?.scan?.version && cachedReport.scan.version === currentVersion) {
+        setStatus("done");
+        setFromCache(true);
+        setReport(cachedReport);
+        return;
+      }
       await dispatchWorkflow(s);
       await new Promise(r => setTimeout(r, 3000));
       setStatus("running");
@@ -425,7 +447,17 @@ export default function App() {
               </div>
 
               <div className="card" style={{ borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{report.slug}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 20, fontWeight: 700 }}>{report.slug}</span>
+                  {scan.version && (
+                    <span style={{ fontSize: 13, color: "var(--text-muted)", fontFamily: "monospace" }}>v{scan.version}</span>
+                  )}
+                  {fromCache && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 20, padding: "2px 10px" }}>
+                      cached
+                    </span>
+                  )}
+                </div>
                 <div className="text-muted" style={{ fontSize: 13 }}>
                   {scan.files_scanned} PHP · {scan.js_files_scanned} JS · min PHP {scan.min_php_version}
                 </div>
