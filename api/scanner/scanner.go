@@ -34,20 +34,32 @@ type Finding struct {
 	FPReason   string `json:"fp_reason,omitempty"`
 }
 
-// WordPress-specific sanitization functions that indicate safe code
+// wpSanitizationFuncs is the official list from WordPress Coding Standards
+// (SanitizationHelperTrait) plus escaping and capability-check functions.
+// Presence of any of these near a flagged line indicates likely safe code.
 var wpSanitizationFuncs = []string{
-	// Type casting / numeric
-	"absint", "intval", "floatval",
-	// Sanitization
-	"sanitize_text_field", "sanitize_textarea_field", "sanitize_email",
-	"sanitize_key", "sanitize_url", "sanitize_user", "sanitize_file_name",
-	"sanitize_html_class", "sanitize_title", "sanitize_mime_type",
-	"wp_kses", "wp_kses_post", "wp_kses_allowed_html",
-	"wp_strip_all_tags", "wp_unslash",
-	// Escaping
+	// Official WPCS sanitizing functions
+	"_wp_handle_upload", "esc_url_raw", "filter_input", "filter_var",
+	"hash_equals", "is_email", "number_format",
+	"sanitize_bookmark_field", "sanitize_bookmark", "sanitize_email",
+	"sanitize_file_name", "sanitize_hex_color_no_hash", "sanitize_hex_color",
+	"sanitize_html_class", "sanitize_meta", "sanitize_mime_type",
+	"sanitize_option", "sanitize_sql_orderby", "sanitize_term_field",
+	"sanitize_term", "sanitize_text_field", "sanitize_textarea_field",
+	"sanitize_title_for_query", "sanitize_title_with_dashes", "sanitize_title",
+	"sanitize_url", "sanitize_user_field", "sanitize_user",
+	"validate_file", "wp_handle_sideload", "wp_handle_upload",
+	"wp_kses_allowed_html", "wp_kses_data", "wp_kses_one_attr",
+	"wp_kses_post", "wp_kses", "wp_parse_id_list",
+	"wp_redirect", "wp_safe_redirect", "wp_sanitize_redirect",
+	"wp_strip_all_tags",
+	// Official WPCS unslashing+sanitizing functions
+	"absint", "boolval", "count", "doubleval", "floatval", "intval",
+	"rest_sanitize_boolean", "sanitize_key", "sanitize_locale_name",
+	// Escaping functions
 	"esc_sql", "esc_url", "esc_attr", "esc_html", "esc_js",
 	"esc_attr__", "esc_html__", "esc_attr_e", "esc_html_e",
-	"esc_textarea", "esc_xml",
+	"esc_textarea", "esc_xml", "rawurlencode",
 	// Nonce / capability checks
 	"wp_verify_nonce", "check_admin_referer", "check_ajax_referer",
 	"current_user_can", "user_can", "is_user_logged_in",
