@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 
-// GitHub config — can be pre-baked via Vite env vars or entered by user at runtime
-const DEFAULT_OWNER = import.meta.env.VITE_GH_OWNER || "";
-const DEFAULT_REPO  = import.meta.env.VITE_GH_REPO  || "";
-const DEFAULT_TOKEN = import.meta.env.VITE_GH_TOKEN  || "";
+const GH_OWNER = "DerHerrFeldmann";
+const GH_REPO  = "ai-security-check";
+const GH_TOKEN = import.meta.env.VITE_GH_TOKEN || "";
 
 interface Finding {
   tool: string;
@@ -201,63 +200,6 @@ function AISummary({ summary }: { summary?: string }) {
   );
 }
 
-// --- GitHub config panel ---
-interface GHConfig {
-  owner: string;
-  repo: string;
-  token: string;
-}
-
-function GitHubConfigPanel({ config, onChange }: { config: GHConfig; onChange: (c: GHConfig) => void }) {
-  const [open, setOpen] = useState(!config.owner || !config.token);
-  return (
-    <div style={{ background: "#1e293b", borderRadius: 16, marginBottom: 24 }}>
-      <button onClick={() => setOpen(o => !o)} style={{
-        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "16px 24px", background: "none", border: "none", outline: "none", cursor: "pointer", color: "#f1f5f9",
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>
-          GitHub Config {config.owner && config.token ? <span style={{ color: "#22c55e" }}>✓ configured</span> : <span style={{ color: "#f59e0b" }}>⚠ required</span>}
-        </div>
-        <span style={{ color: "#64748b", fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
-      </button>
-      {open && (
-        <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}>
-            Analysis runs via GitHub Actions. Enter your repo details and a fine-grained PAT with <strong style={{ color: "#f1f5f9" }}>Actions: write</strong> permission.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <input
-              value={config.owner}
-              onChange={e => onChange({ ...config, owner: e.target.value })}
-              placeholder="GitHub owner (user or org)"
-              style={inputStyle}
-            />
-            <input
-              value={config.repo}
-              onChange={e => onChange({ ...config, repo: e.target.value })}
-              placeholder="Repository name"
-              style={inputStyle}
-            />
-          </div>
-          <input
-            value={config.token}
-            onChange={e => onChange({ ...config, token: e.target.value })}
-            placeholder="GitHub PAT (fine-grained, Actions: write)"
-            type="password"
-            style={inputStyle}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  padding: "12px 16px", borderRadius: 10, border: "1px solid #334155",
-  background: "#0f172a", color: "#f1f5f9", fontSize: 14, outline: "none", width: "100%",
-};
-
 // --- Progress indicator ---
 function ProgressBar({ status }: { status: AnalysisStatus }) {
   if (status === "idle") return null;
@@ -345,23 +287,13 @@ export default function App() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError]   = useState("");
 
-  const [config, setConfig] = useState<GHConfig>(() => {
-    const stored = localStorage.getItem("gh-config");
-    if (stored) {
-      try { return JSON.parse(stored); } catch { /* ignore */ }
-    }
-    return { owner: DEFAULT_OWNER, repo: DEFAULT_REPO, token: DEFAULT_TOKEN };
-  });
-
-  useEffect(() => {
-    localStorage.setItem("gh-config", JSON.stringify(config));
-  }, [config]);
-
   async function analyze() {
     if (!slug.trim()) return;
-    const { owner, repo, token } = config;
-    if (!owner || !repo || !token) {
-      setError("Please fill in GitHub owner, repo, and token in the config panel above.");
+    const owner = GH_OWNER;
+    const repo  = GH_REPO;
+    const token = GH_TOKEN;
+    if (!token) {
+      setError("No GitHub token configured. Set VITE_GH_TOKEN in the repo secrets.");
       return;
     }
 
@@ -379,6 +311,7 @@ export default function App() {
 
       // 3. Poll until completed
       const runId = await pollUntilComplete(owner, repo, token);
+      void runId;
 
       if (runId === null) {
         throw new Error("Workflow did not complete successfully.");
@@ -428,8 +361,6 @@ export default function App() {
           <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1 }}>WP Plugin Insight</h1>
           <p style={{ color: "#64748b", marginTop: 6, fontSize: 15 }}>AI-powered quality &amp; security analysis for WordPress plugins.</p>
         </div>
-
-        <GitHubConfigPanel config={config} onChange={setConfig} />
 
         <div style={{ display: "flex", gap: 12, marginBottom: 24, maxWidth: 600 }}>
           <input
