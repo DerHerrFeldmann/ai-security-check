@@ -334,8 +334,15 @@ export default function App() {
         {/* Header */}
         <div style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1 }}>WP Plugin Insight</h1>
-          <p style={{ color: "#64748b", marginTop: 6, fontSize: 15 }}>
-            AI-powered security &amp; quality analysis for WordPress plugins — runs in ~2 min via GitHub Actions.
+          <p style={{ color: "#64748b", marginTop: 6, fontSize: 15, lineHeight: 1.6 }}>
+            AI-powered security &amp; quality analysis for WordPress plugins.{" "}
+            The scanner runs entirely on{" "}
+            <a href="https://github.com/DerHerrFeldmann/ai-security-check/actions" target="_blank" rel="noreferrer"
+              style={{ color: "#3b82f6", textDecoration: "none" }}>GitHub Actions</a>
+            {" "}— slower than a local tool (~2 min), but 100% transparent: you can see every step,
+            read the source, and{" "}
+            <a href="https://github.com/DerHerrFeldmann/ai-security-check" target="_blank" rel="noreferrer"
+              style={{ color: "#3b82f6", textDecoration: "none" }}>contribute on GitHub</a>.
           </p>
         </div>
 
