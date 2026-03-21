@@ -344,7 +344,7 @@ export default function App() {
         }
       `}</style>
 
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "56px 32px" }}>
+      <div style={{ maxWidth: 860, width: "100%", margin: "0 auto", padding: "56px 32px" }}>
 
         {/* Header — centered */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
