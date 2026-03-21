@@ -351,7 +351,10 @@ func runSemgrep(dir string) []Finding {
 
 // runPHPCS runs PHPCS with WordPress security standards — errors only.
 func runPHPCS(dir string) []Finding {
-	phpcs := "/Users/mfeldmann/Projects/hackathon/WPPluginInsights/plugin-check/vendor/bin/phpcs"
+	phpcs := os.Getenv("PHPCS_BIN")
+	if phpcs == "" {
+		phpcs = "phpcs"
+	}
 	cmd := exec.Command(phpcs,
 		"--standard=WordPress-Security",
 		"--report=json",

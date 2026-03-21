@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 
-const API = "http://localhost:8080";
+// GitHub config — can be pre-baked via Vite env vars or entered by user at runtime
+const DEFAULT_OWNER = import.meta.env.VITE_GH_OWNER || "";
+const DEFAULT_REPO  = import.meta.env.VITE_GH_REPO  || "";
+const DEFAULT_TOKEN = import.meta.env.VITE_GH_TOKEN  || "";
 
 interface Finding {
   tool: string;
@@ -31,8 +34,9 @@ interface Report {
   score: number;
   scan: ScanResult;
   summary?: string;
-  summaryLoading?: boolean;
 }
+
+type AnalysisStatus = "idle" | "queued" | "running" | "done" | "error";
 
 const ruleExplanations: Record<string, { label: string; explanation: string }> = {
   "echoed-request":           { label: "XSS – Unsanitized Output",       explanation: "User input (e.g. $_GET, $_POST) is printed directly to the page without escaping. An attacker can inject malicious HTML or JavaScript." },
@@ -174,8 +178,9 @@ const mdComponents = {
   ),
 };
 
-function AISummary({ loading, summary }: { loading: boolean; summary?: string }) {
+function AISummary({ summary }: { summary?: string }) {
   const [open, setOpen] = useState(true);
+  if (!summary) return null;
   return (
     <div style={{ background: "#1e293b", borderRadius: 16, overflow: "hidden" }}>
       <button onClick={() => setOpen(o => !o)} style={{
@@ -185,12 +190,9 @@ function AISummary({ loading, summary }: { loading: boolean; summary?: string })
         <div style={{ fontSize: 13, fontWeight: 600, color: "#3b82f6", textTransform: "uppercase", letterSpacing: 1 }}>
           AI Assessment
         </div>
-        {loading
-          ? <div style={{ color: "#64748b", fontSize: 14 }}><Spinner />Generating…</div>
-          : <span style={{ color: "#64748b", fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
-        }
+        <span style={{ color: "#64748b", fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
       </button>
-      {open && !loading && summary && (
+      {open && (
         <div style={{ padding: "0 24px 24px" }}>
           <ReactMarkdown components={mdComponents as never}>{summary}</ReactMarkdown>
         </div>
@@ -199,46 +201,216 @@ function AISummary({ loading, summary }: { loading: boolean; summary?: string })
   );
 }
 
+// --- GitHub config panel ---
+interface GHConfig {
+  owner: string;
+  repo: string;
+  token: string;
+}
+
+function GitHubConfigPanel({ config, onChange }: { config: GHConfig; onChange: (c: GHConfig) => void }) {
+  const [open, setOpen] = useState(!config.owner || !config.token);
+  return (
+    <div style={{ background: "#1e293b", borderRadius: 16, marginBottom: 24 }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "16px 24px", background: "none", border: "none", outline: "none", cursor: "pointer", color: "#f1f5f9",
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>
+          GitHub Config {config.owner && config.token ? <span style={{ color: "#22c55e" }}>✓ configured</span> : <span style={{ color: "#f59e0b" }}>⚠ required</span>}
+        </div>
+        <span style={{ color: "#64748b", fontSize: 18, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}>
+            Analysis runs via GitHub Actions. Enter your repo details and a fine-grained PAT with <strong style={{ color: "#f1f5f9" }}>Actions: write</strong> permission.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <input
+              value={config.owner}
+              onChange={e => onChange({ ...config, owner: e.target.value })}
+              placeholder="GitHub owner (user or org)"
+              style={inputStyle}
+            />
+            <input
+              value={config.repo}
+              onChange={e => onChange({ ...config, repo: e.target.value })}
+              placeholder="Repository name"
+              style={inputStyle}
+            />
+          </div>
+          <input
+            value={config.token}
+            onChange={e => onChange({ ...config, token: e.target.value })}
+            placeholder="GitHub PAT (fine-grained, Actions: write)"
+            type="password"
+            style={inputStyle}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  padding: "12px 16px", borderRadius: 10, border: "1px solid #334155",
+  background: "#0f172a", color: "#f1f5f9", fontSize: 14, outline: "none", width: "100%",
+};
+
+// --- Progress indicator ---
+function ProgressBar({ status }: { status: AnalysisStatus }) {
+  if (status === "idle") return null;
+  const steps: { key: AnalysisStatus; label: string }[] = [
+    { key: "queued",  label: "Queued" },
+    { key: "running", label: "Running (~2 min)" },
+    { key: "done",    label: "Done" },
+  ];
+  const currentIdx = steps.findIndex(s => s.key === status);
+  return (
+    <div style={{ background: "#1e293b", borderRadius: 12, padding: "16px 24px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+      {status !== "error" && <Spinner />}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {steps.map((step, i) => (
+          <span key={step.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{
+              fontSize: 13,
+              fontWeight: i <= currentIdx ? 600 : 400,
+              color: i < currentIdx ? "#22c55e" : i === currentIdx ? "#3b82f6" : "#475569",
+            }}>
+              {i < currentIdx ? "✓ " : ""}{step.label}
+            </span>
+            {i < steps.length - 1 && <span style={{ color: "#334155" }}>→</span>}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- GitHub API helpers ---
+async function dispatchWorkflow(owner: string, repo: string, token: string, slug: string) {
+  const res = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/analyze.yml/dispatches`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ref: "main", inputs: { plugin_slug: slug } }),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Failed to dispatch workflow: ${res.status} ${body}`);
+  }
+}
+
+interface WorkflowRun {
+  id: number;
+  status: string;
+  conclusion: string | null;
+  created_at: string;
+}
+
+async function getLatestRun(owner: string, repo: string, token: string): Promise<WorkflowRun | null> {
+  const res = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/analyze.yml/runs?per_page=5&event=workflow_dispatch`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
+    }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.workflow_runs?.length) return null;
+  return data.workflow_runs[0];
+}
+
+async function fetchReport(owner: string, repo: string, slug: string): Promise<Report> {
+  const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/reports/${slug}.json`;
+  const res = await fetch(url + "?t=" + Date.now()); // bust cache
+  if (!res.ok) throw new Error(`Report not found: ${url}`);
+  return res.json();
+}
+
+// --- Main App ---
 export default function App() {
-  const [slug, setSlug]       = useState("wapuugotchi");
-  const [loading, setLoading] = useState(false);
-  const [report, setReport]   = useState<Report | null>(null);
-  const [error, setError]     = useState("");
+  const [slug, setSlug]     = useState("wapuugotchi");
+  const [status, setStatus] = useState<AnalysisStatus>("idle");
+  const [report, setReport] = useState<Report | null>(null);
+  const [error, setError]   = useState("");
+
+  const [config, setConfig] = useState<GHConfig>(() => {
+    const stored = localStorage.getItem("gh-config");
+    if (stored) {
+      try { return JSON.parse(stored); } catch { /* ignore */ }
+    }
+    return { owner: DEFAULT_OWNER, repo: DEFAULT_REPO, token: DEFAULT_TOKEN };
+  });
+
+  useEffect(() => {
+    localStorage.setItem("gh-config", JSON.stringify(config));
+  }, [config]);
 
   async function analyze() {
     if (!slug.trim()) return;
-    setLoading(true);
+    const { owner, repo, token } = config;
+    if (!owner || !repo || !token) {
+      setError("Please fill in GitHub owner, repo, and token in the config panel above.");
+      return;
+    }
+
+    setStatus("queued");
     setReport(null);
     setError("");
 
     try {
-      const res = await fetch(`${API}/api/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: slug.trim().toLowerCase() }),
-      });
-      const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      // 1. Dispatch the workflow
+      await dispatchWorkflow(owner, repo, token, slug.trim().toLowerCase());
 
-      setReport({ ...data, summaryLoading: true });
-      setLoading(false);
+      // 2. Wait a moment for the run to appear, then poll
+      await new Promise(r => setTimeout(r, 3000));
+      setStatus("running");
 
-      const aiRes = await fetch(`${API}/api/summarize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: data.slug, score: data.score, scan: data.scan }),
-      });
-      const aiData = await aiRes.json();
-      setReport(prev => prev ? { ...prev, summary: aiData.summary, summaryLoading: false } : prev);
+      // 3. Poll until completed
+      const runId = await pollUntilComplete(owner, repo, token);
 
-    } catch {
-      setError("Could not reach the API. Is the Go server running on :8080?");
-    } finally {
-      setLoading(false);
+      if (runId === null) {
+        throw new Error("Workflow did not complete successfully.");
+      }
+
+      // 4. Fetch report from raw.githubusercontent.com
+      setStatus("done");
+      const data = await fetchReport(owner, repo, slug.trim().toLowerCase());
+      setReport(data);
+
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStatus("error");
     }
   }
 
+  async function pollUntilComplete(owner: string, repo: string, token: string): Promise<number | null> {
+    const deadline = Date.now() + 10 * 60 * 1000; // 10 min max
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 5000));
+      const run = await getLatestRun(owner, repo, token);
+      if (!run) continue;
+      if (run.status === "completed") {
+        if (run.conclusion === "success") return run.id;
+        throw new Error(`Workflow finished with conclusion: ${run.conclusion}`);
+      }
+    }
+    throw new Error("Timed out waiting for workflow to complete.");
+  }
+
   const s = report?.scan;
+  const loading = status === "queued" || status === "running";
 
   return (
     <>
@@ -257,11 +429,13 @@ export default function App() {
           <p style={{ color: "#64748b", marginTop: 6, fontSize: 15 }}>AI-powered quality &amp; security analysis for WordPress plugins.</p>
         </div>
 
-        <div style={{ display: "flex", gap: 12, marginBottom: 40, maxWidth: 600 }}>
+        <GitHubConfigPanel config={config} onChange={setConfig} />
+
+        <div style={{ display: "flex", gap: 12, marginBottom: 24, maxWidth: 600 }}>
           <input
             value={slug}
             onChange={e => setSlug(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && analyze()}
+            onKeyDown={e => e.key === "Enter" && !loading && analyze()}
             placeholder="Plugin slug, e.g. woocommerce"
             style={{ flex: 1, padding: "14px 18px", borderRadius: 12, border: "1px solid #1e293b", background: "#1e293b", color: "#f1f5f9", fontSize: 15, outline: "none" }}
           />
@@ -274,6 +448,8 @@ export default function App() {
           </button>
         </div>
 
+        {(status !== "idle") && <ProgressBar status={status} />}
+
         {error && (
           <div className="fade" style={{ background: "#450a0a", border: "1px solid #7f1d1d", borderRadius: 12, padding: "14px 18px", color: "#fca5a5", marginBottom: 24 }}>
             {error}
@@ -283,7 +459,7 @@ export default function App() {
         {report && s && (
           <div className="fade" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {/* Score + Meta + AI */}
+            {/* Score + Meta */}
             <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 16 }}>
               <div style={{ background: scoreBg(report.score), border: `1px solid ${scoreColor(report.score)}40`, borderRadius: 16, padding: 24, textAlign: "center" }}>
                 <div style={{ color: scoreColor(report.score), fontSize: 64, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
@@ -297,7 +473,7 @@ export default function App() {
             </div>
 
             {/* AI Summary */}
-            <AISummary loading={!!report.summaryLoading} summary={report.summary} />
+            <AISummary summary={report.summary} />
 
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>

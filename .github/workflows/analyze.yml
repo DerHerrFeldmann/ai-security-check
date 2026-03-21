@@ -12,24 +12,37 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # needed to commit the report back
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          python-version: "3.12"
+          go-version: "1.22"
+          cache-dependency-path: api/go.sum
 
-      - name: Install dependencies
-        run: pip install -r scanner/requirements.txt
+      - name: Install Semgrep
+        run: pip install semgrep
 
-      - name: Run scanner
-        run: python scanner/analyze.py "${{ inputs.plugin_slug }}"
+      - name: Install PHPCS + WordPress Coding Standards
+        run: |
+          composer global require squizlabs/php_codesniffer
+          composer global require wp-coding-standards/wpcs
+          ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs
+        continue-on-error: true
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run Go CLI scanner
+        working-directory: api
+        run: go run ./cmd/cli -json "${{ inputs.plugin_slug }}" > "../reports/${{ inputs.plugin_slug }}.json"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PHPCS_BIN: ~/.composer/vendor/bin/phpcs
 
       - name: Commit report
         run: |
