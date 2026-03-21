@@ -211,7 +211,7 @@ function ProgressBar({ status }: { status: AnalysisStatus }) {
   const currentIdx = steps.findIndex(s => s.key === status);
   return (
     <div style={{ background: "#1e293b", borderRadius: 12, padding: "16px 24px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-      {status !== "error" && <Spinner />}
+      {(status === "queued" || status === "running") && <Spinner />}
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         {steps.map((step, i) => (
           <span key={step.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
