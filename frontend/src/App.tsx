@@ -38,15 +38,15 @@ interface Report {
 type AnalysisStatus = "idle" | "queued" | "running" | "done" | "error";
 
 const ruleExplanations: Record<string, { label: string; explanation: string }> = {
-  "echoed-request":           { label: "XSS – Unsanitized Output",       explanation: "User input (e.g. $_GET, $_POST) is printed directly to the page without escaping. An attacker can inject malicious HTML or JavaScript." },
-  "tainted-sql-string":       { label: "SQL Injection",                   explanation: "User input flows into a SQL query without proper sanitization. An attacker could read, modify or delete database content." },
-  "tainted-filename":         { label: "Path Traversal",                  explanation: "User input is used as a file path. An attacker could read arbitrary files on the server (e.g. ../../wp-config.php)." },
-  "curl-ssl-verifypeer-off":  { label: "SSL Verification Disabled",       explanation: "SSL certificate verification is turned off. The plugin can be tricked into connecting to a fake server (man-in-the-middle attack)." },
-  "tainted-code-exec":        { label: "Code Execution",                  explanation: "User input is passed to a code execution function like eval(). An attacker could run arbitrary PHP code on the server." },
-  "tainted-shell-exec":       { label: "Shell Injection",                 explanation: "User input is passed to a shell command. An attacker could execute arbitrary system commands on the server." },
-  "file-inclusion":           { label: "File Inclusion",                  explanation: "User input controls which file is included. An attacker could load malicious files from a remote server." },
-  "deserialize-user-input":   { label: "Unsafe Deserialization",          explanation: "User-supplied data is deserialized without validation. This can lead to remote code execution." },
-  "hardcoded-secret":         { label: "Hardcoded Secret",                explanation: "A password, API key or token appears to be hardcoded in the source code." },
+  "echoed-request":          { label: "XSS – Unsanitized Output",    explanation: "User input (e.g. $_GET, $_POST) is printed directly to the page without escaping. An attacker can inject malicious HTML or JavaScript." },
+  "tainted-sql-string":      { label: "SQL Injection",               explanation: "User input flows into a SQL query without proper sanitization. An attacker could read, modify or delete database content." },
+  "tainted-filename":        { label: "Path Traversal",              explanation: "User input is used as a file path. An attacker could read arbitrary files on the server (e.g. ../../wp-config.php)." },
+  "curl-ssl-verifypeer-off": { label: "SSL Verification Disabled",   explanation: "SSL certificate verification is turned off. The plugin can be tricked into connecting to a fake server (man-in-the-middle attack)." },
+  "tainted-code-exec":       { label: "Code Execution",              explanation: "User input is passed to a code execution function like eval(). An attacker could run arbitrary PHP code on the server." },
+  "tainted-shell-exec":      { label: "Shell Injection",             explanation: "User input is passed to a shell command. An attacker could execute arbitrary system commands on the server." },
+  "file-inclusion":          { label: "File Inclusion",              explanation: "User input controls which file is included. An attacker could load malicious files from a remote server." },
+  "deserialize-user-input":  { label: "Unsafe Deserialization",      explanation: "User-supplied data is deserialized without validation. This can lead to remote code execution." },
+  "hardcoded-secret":        { label: "Hardcoded Secret",            explanation: "A password, API key or token appears to be hardcoded in the source code." },
 };
 
 function getRuleInfo(ruleId: string) {
@@ -77,12 +77,13 @@ function StatCard({ label, value, warn }: { label: string; value: string | numbe
   );
 }
 
-function Spinner() {
+function Spinner({ size = 14 }: { size?: number }) {
   return (
     <span style={{
-      display: "inline-block", width: 14, height: 14, border: "2px solid #334155",
-      borderTop: "2px solid #3b82f6", borderRadius: "50%",
-      animation: "spin 0.8s linear infinite", marginRight: 8, verticalAlign: "middle",
+      display: "inline-block", width: size, height: size,
+      border: "2px solid #334155", borderTop: "2px solid #3b82f6",
+      borderRadius: "50%", animation: "spin 0.8s linear infinite",
+      marginRight: 8, verticalAlign: "middle", flexShrink: 0,
     }} />
   );
 }
@@ -200,27 +201,32 @@ function AISummary({ summary }: { summary?: string }) {
   );
 }
 
-// --- Progress indicator ---
-function ProgressBar({ status }: { status: AnalysisStatus }) {
-  if (status === "idle") return null;
-  const steps: { key: AnalysisStatus; label: string }[] = [
-    { key: "queued",  label: "Queued" },
-    { key: "running", label: "Running (~2 min)" },
-    { key: "done",    label: "Done" },
-  ];
-  const currentIdx = steps.findIndex(s => s.key === status);
+function StatusBanner({ status }: { status: AnalysisStatus }) {
+  if (status === "idle" || status === "done") return null;
+
+  const steps = ["queued", "running", "done"] as const;
+  const currentIdx = steps.indexOf(status as typeof steps[number]);
+
+  if (status === "error") {
+    return null; // error is shown separately
+  }
+
   return (
-    <div style={{ background: "#1e293b", borderRadius: 12, padding: "16px 24px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-      {(status === "queued" || status === "running") && <Spinner />}
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    <div style={{
+      background: "#1e293b", borderRadius: 12, padding: "14px 20px",
+      marginBottom: 24, display: "flex", alignItems: "center", gap: 16,
+    }}>
+      <Spinner />
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {steps.map((step, i) => (
-          <span key={step.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span key={step} style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{
               fontSize: 13,
               fontWeight: i <= currentIdx ? 600 : 400,
               color: i < currentIdx ? "#22c55e" : i === currentIdx ? "#3b82f6" : "#475569",
             }}>
-              {i < currentIdx ? "✓ " : ""}{step.label}
+              {i < currentIdx ? "✓ " : ""}
+              {step === "queued" ? "Queued" : step === "running" ? "Running (~2 min)" : "Done"}
             </span>
             {i < steps.length - 1 && <span style={{ color: "#334155" }}>→</span>}
           </span>
@@ -231,13 +237,13 @@ function ProgressBar({ status }: { status: AnalysisStatus }) {
 }
 
 // --- GitHub API helpers ---
-async function dispatchWorkflow(owner: string, repo: string, token: string, slug: string) {
+async function dispatchWorkflow(slug: string) {
   const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/analyze.yml/dispatches`,
+    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml/dispatches`,
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${GH_TOKEN}`,
         Accept: "application/vnd.github+json",
         "Content-Type": "application/json",
       },
@@ -250,49 +256,44 @@ async function dispatchWorkflow(owner: string, repo: string, token: string, slug
   }
 }
 
-interface WorkflowRun {
-  id: number;
-  status: string;
-  conclusion: string | null;
-  created_at: string;
-}
-
-async function getLatestRun(owner: string, repo: string, token: string): Promise<WorkflowRun | null> {
-  const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/analyze.yml/runs?per_page=5&event=workflow_dispatch`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
-      },
+async function pollUntilComplete(): Promise<void> {
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 5000));
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml/runs?per_page=1&event=workflow_dispatch`,
+      { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: "application/vnd.github+json" } }
+    );
+    if (!res.ok) continue;
+    const data = await res.json();
+    const run = data.workflow_runs?.[0];
+    if (!run) continue;
+    if (run.status === "completed") {
+      if (run.conclusion === "success") return;
+      throw new Error(`Workflow finished with conclusion: ${run.conclusion}`);
     }
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data.workflow_runs?.length) return null;
-  return data.workflow_runs[0];
+  }
+  throw new Error("Timed out waiting for workflow to complete.");
 }
 
-async function fetchReport(owner: string, repo: string, slug: string): Promise<Report> {
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/reports/${slug}.json`;
-  const res = await fetch(url + "?t=" + Date.now()); // bust cache
-  if (!res.ok) throw new Error(`Report not found: ${url}`);
+async function fetchReport(slug: string): Promise<Report> {
+  const url = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/reports/${slug}.json?t=${Date.now()}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Report not found for "${slug}"`);
   return res.json();
 }
 
 // --- Main App ---
 export default function App() {
-  const [slug, setSlug]     = useState("wapuugotchi");
+  const [slug, setSlug]     = useState("");
   const [status, setStatus] = useState<AnalysisStatus>("idle");
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError]   = useState("");
 
   async function analyze() {
-    if (!slug.trim()) return;
-    const owner = GH_OWNER;
-    const repo  = GH_REPO;
-    const token = GH_TOKEN;
-    if (!token) {
+    const s = slug.trim().toLowerCase();
+    if (!s) return;
+    if (!GH_TOKEN) {
       setError("No GitHub token configured. Set VITE_GH_TOKEN in the repo secrets.");
       return;
     }
@@ -302,47 +303,19 @@ export default function App() {
     setError("");
 
     try {
-      // 1. Dispatch the workflow
-      await dispatchWorkflow(owner, repo, token, slug.trim().toLowerCase());
-
-      // 2. Wait a moment for the run to appear, then poll
+      await dispatchWorkflow(s);
       await new Promise(r => setTimeout(r, 3000));
       setStatus("running");
-
-      // 3. Poll until completed
-      const runId = await pollUntilComplete(owner, repo, token);
-      void runId;
-
-      if (runId === null) {
-        throw new Error("Workflow did not complete successfully.");
-      }
-
-      // 4. Fetch report from raw.githubusercontent.com
+      await pollUntilComplete();
       setStatus("done");
-      const data = await fetchReport(owner, repo, slug.trim().toLowerCase());
-      setReport(data);
-
+      setReport(await fetchReport(s));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
       setStatus("error");
     }
   }
 
-  async function pollUntilComplete(owner: string, repo: string, token: string): Promise<number | null> {
-    const deadline = Date.now() + 10 * 60 * 1000; // 10 min max
-    while (Date.now() < deadline) {
-      await new Promise(r => setTimeout(r, 5000));
-      const run = await getLatestRun(owner, repo, token);
-      if (!run) continue;
-      if (run.status === "completed") {
-        if (run.conclusion === "success") return run.id;
-        throw new Error(`Workflow finished with conclusion: ${run.conclusion}`);
-      }
-    }
-    throw new Error("Timed out waiting for workflow to complete.");
-  }
-
-  const s = report?.scan;
+  const scan = report?.scan;
   const loading = status === "queued" || status === "running";
 
   return (
@@ -353,53 +326,78 @@ export default function App() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         .fade { animation: fadeIn 0.3s ease; }
+        input:focus { border-color: #3b82f6 !important; }
       `}</style>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 32px" }}>
 
+        {/* Header */}
         <div style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1 }}>WP Plugin Insight</h1>
-          <p style={{ color: "#64748b", marginTop: 6, fontSize: 15 }}>AI-powered quality &amp; security analysis for WordPress plugins.</p>
+          <p style={{ color: "#64748b", marginTop: 6, fontSize: 15 }}>
+            AI-powered security &amp; quality analysis for WordPress plugins — runs in ~2 min via GitHub Actions.
+          </p>
         </div>
 
+        {/* Search */}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, maxWidth: 600 }}>
           <input
             value={slug}
             onChange={e => setSlug(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !loading && analyze()}
             placeholder="Plugin slug, e.g. woocommerce"
-            style={{ flex: 1, padding: "14px 18px", borderRadius: 12, border: "1px solid #1e293b", background: "#1e293b", color: "#f1f5f9", fontSize: 15, outline: "none" }}
+            style={{
+              flex: 1, padding: "14px 18px", borderRadius: 12,
+              border: "1px solid #1e293b", background: "#1e293b",
+              color: "#f1f5f9", fontSize: 15, outline: "none",
+              transition: "border-color 0.2s",
+            }}
           />
           <button onClick={analyze} disabled={loading} style={{
             padding: "14px 28px", borderRadius: 12, border: "none",
-            background: loading ? "#1e293b" : "#3b82f6", color: loading ? "#475569" : "white",
-            fontWeight: 600, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", minWidth: 120,
+            background: loading ? "#1e293b" : "#3b82f6",
+            color: loading ? "#475569" : "white",
+            fontWeight: 600, fontSize: 15,
+            cursor: loading ? "not-allowed" : "pointer",
+            minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {loading ? <><Spinner />Scanning…</> : "Analyze"}
           </button>
         </div>
 
-        {(status !== "idle") && <ProgressBar status={status} />}
+        {/* Progress */}
+        <StatusBanner status={status} />
 
+        {/* Error */}
         {error && (
-          <div className="fade" style={{ background: "#450a0a", border: "1px solid #7f1d1d", borderRadius: 12, padding: "14px 18px", color: "#fca5a5", marginBottom: 24 }}>
+          <div className="fade" style={{
+            background: "#450a0a", border: "1px solid #7f1d1d",
+            borderRadius: 12, padding: "14px 18px", color: "#fca5a5", marginBottom: 24,
+          }}>
             {error}
           </div>
         )}
 
-        {report && s && (
+        {/* Results */}
+        {report && scan && (
           <div className="fade" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
             {/* Score + Meta */}
             <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 16 }}>
-              <div style={{ background: scoreBg(report.score), border: `1px solid ${scoreColor(report.score)}40`, borderRadius: 16, padding: 24, textAlign: "center" }}>
+              <div style={{
+                background: scoreBg(report.score),
+                border: `1px solid ${scoreColor(report.score)}40`,
+                borderRadius: 16, padding: 24, textAlign: "center",
+              }}>
                 <div style={{ color: scoreColor(report.score), fontSize: 64, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
                 <div style={{ color: scoreColor(report.score), fontSize: 13, marginTop: 6, fontWeight: 600 }}>{scoreLabel(report.score)}</div>
                 <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>out of 100</div>
               </div>
-              <div style={{ background: "#1e293b", borderRadius: 16, padding: 24 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{report.slug}</div>
-                <div style={{ color: "#64748b", fontSize: 13 }}>{s.files_scanned} PHP files · min PHP {s.min_php_version}</div>
+              <div style={{ background: "#1e293b", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{report.slug}</div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>
+                  {scan.files_scanned} PHP files · min PHP {scan.min_php_version}
+                </div>
               </div>
             </div>
 
@@ -408,42 +406,41 @@ export default function App() {
 
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-              <StatCard label="Files scanned"       value={s.files_scanned} />
-              <StatCard label="External HTTP calls" value={s.external_calls} warn={s.external_calls > 3} />
-              <StatCard label="Direct DB access"    value={s.direct_db_access ? "Yes" : "No"} warn={s.direct_db_access} />
-              <StatCard label="Missing i18n"        value={s.missing_i18n_samples.length} warn={s.missing_i18n_samples.length > 0} />
+              <StatCard label="Files scanned"       value={scan.files_scanned} />
+              <StatCard label="External HTTP calls" value={scan.external_calls} warn={scan.external_calls > 3} />
+              <StatCard label="Direct DB access"    value={scan.direct_db_access ? "Yes" : "No"} warn={scan.direct_db_access} />
+              <StatCard label="Missing i18n"        value={scan.missing_i18n_samples.length} warn={scan.missing_i18n_samples.length > 0} />
             </div>
 
             {/* Security flags + Deprecated */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={{ background: "#1e293b", borderRadius: 16, padding: 24 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#ef4444", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Security Flags</div>
-                {s.security_flags.length === 0
+                {scan.security_flags.length === 0
                   ? <span style={{ color: "#22c55e", fontSize: 14 }}>✓ None found</span>
-                  : s.security_flags.map(f => <Pill key={f} label={f} color="#ef4444" />)
+                  : scan.security_flags.map(f => <Pill key={f} label={f} color="#ef4444" />)
                 }
               </div>
               <div style={{ background: "#1e293b", borderRadius: 16, padding: 24 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#f59e0b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Deprecated Functions</div>
-                {s.deprecated_functions.length === 0
+                {scan.deprecated_functions.length === 0
                   ? <span style={{ color: "#22c55e", fontSize: 14 }}>✓ None found</span>
-                  : s.deprecated_functions.map(f => <Pill key={f} label={f} color="#f59e0b" />)
+                  : scan.deprecated_functions.map(f => <Pill key={f} label={f} color="#f59e0b" />)
                 }
               </div>
             </div>
 
-            {/* Semgrep findings */}
-            <Collapsible title="Semgrep" count={s.semgrep_findings?.length ?? 0} color="#ef4444">
-              <FindingsTable findings={s.semgrep_findings ?? []} color="#ef4444" />
+            {/* Findings */}
+            <Collapsible title="Semgrep" count={scan.semgrep_findings?.length ?? 0} color="#ef4444">
+              <FindingsTable findings={scan.semgrep_findings ?? []} color="#ef4444" />
             </Collapsible>
-
-            {/* PHPCS findings */}
-            <Collapsible title="PHPCS" count={s.phpcs_findings?.length ?? 0} color="#f59e0b">
-              <FindingsTable findings={s.phpcs_findings ?? []} color="#f59e0b" />
+            <Collapsible title="PHPCS" count={scan.phpcs_findings?.length ?? 0} color="#f59e0b">
+              <FindingsTable findings={scan.phpcs_findings ?? []} color="#f59e0b" />
             </Collapsible>
 
           </div>
         )}
+
       </div>
     </>
   );
