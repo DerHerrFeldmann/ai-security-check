@@ -47,6 +47,7 @@ var wpSanitizationFuncs = []string{
 // Result holds everything found during a scan.
 type Result struct {
 	FilesScanned       int           `json:"files_scanned"`
+	JSFilesScanned     int           `json:"js_files_scanned"`
 	DeprecatedFuncs    []string      `json:"deprecated_functions"`
 	SecurityFlags      []string      `json:"security_flags"`
 	ExternalCalls      int           `json:"external_calls"`
@@ -203,7 +204,15 @@ func scanDir(dir string) (Result, error) {
 	securitySeen := map[string]bool{}
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".php") {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		// Count JS files (skip minified and vendor/node_modules)
+		if strings.HasSuffix(path, ".js") && !strings.HasSuffix(path, ".min.js") &&
+			!strings.Contains(path, "/vendor/") && !strings.Contains(path, "/node_modules/") {
+			result.JSFilesScanned++
+		}
+		if !strings.HasSuffix(path, ".php") {
 			return nil
 		}
 		b, err := os.ReadFile(path)
@@ -301,8 +310,12 @@ func runSemgrep(dir string) []Finding {
 	cmd := exec.Command("semgrep",
 		"--config", "p/php",
 		"--config", "p/security-audit",
+		"--config", "p/javascript",
 		"--json",
 		"--no-git-ignore",
+		"--exclude", "*.min.js",
+		"--exclude", "vendor",
+		"--exclude", "node_modules",
 		"--quiet",
 		dir,
 	)

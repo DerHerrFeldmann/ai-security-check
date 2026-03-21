@@ -18,6 +18,7 @@ interface Finding {
 
 interface ScanResult {
   files_scanned: number;
+  js_files_scanned: number;
   deprecated_functions: string[];
   security_flags: string[];
   external_calls: number;
@@ -426,7 +427,7 @@ export default function App() {
               <div className="card" style={{ borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{report.slug}</div>
                 <div className="text-muted" style={{ fontSize: 13 }}>
-                  {scan.files_scanned} PHP files · min PHP {scan.min_php_version}
+                  {scan.files_scanned} PHP · {scan.js_files_scanned} JS · min PHP {scan.min_php_version}
                 </div>
               </div>
             </div>
@@ -435,8 +436,9 @@ export default function App() {
             <AISummary summary={report.summary} />
 
             {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-              <StatCard label="Files scanned"       value={scan.files_scanned} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+              <StatCard label="PHP files"           value={scan.files_scanned} />
+              <StatCard label="JS files"            value={scan.js_files_scanned} />
               <StatCard label="External HTTP calls" value={scan.external_calls} warn={scan.external_calls > 3} />
               <StatCard label="Direct DB access"    value={scan.direct_db_access ? "Yes" : "No"} warn={scan.direct_db_access} />
               <StatCard label="Missing i18n"        value={scan.missing_i18n_samples.length} warn={scan.missing_i18n_samples.length > 0} />
