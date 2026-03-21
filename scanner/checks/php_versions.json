@@ -1,0 +1,43 @@
+{
+  "8.3": [
+    "json_validate",
+    "mb_str_split",
+    "Override"
+  ],
+  "8.2": [
+    "readonly class",
+    "DNF types",
+    "AllowDynamicProperties"
+  ],
+  "8.1": [
+    "enum ",
+    "readonly ",
+    "array_is_list",
+    "never"
+  ],
+  "8.0": [
+    "match(",
+    "throw ",
+    "#\\[",
+    "str_contains",
+    "str_starts_with",
+    "str_ends_with",
+    "fdiv",
+    "get_debug_type"
+  ],
+  "7.4": [
+    "fn(",
+    "fn (",
+    "\\?\\?=",
+    "array_key_first",
+    "array_key_last"
+  ],
+  "7.3": [
+    "array_key_first",
+    "array_key_last",
+    "is_countable"
+  ],
+  "7.2": [
+    "object "
+  ]
+}

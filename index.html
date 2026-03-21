@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WP Plugin Insight</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: white; border-radius: 12px; padding: 40px; max-width: 520px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    h1 { font-size: 1.6rem; margin-bottom: 4px; }
+    p.sub { color: #666; margin-bottom: 28px; font-size: 0.95rem; }
+    input { width: 100%; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none; transition: border 0.2s; }
+    input:focus { border-color: #3b82f6; }
+    button { width: 100%; margin-top: 12px; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #2563eb; }
+    button:disabled { background: #93c5fd; cursor: not-allowed; }
+    .status { margin-top: 20px; padding: 14px; border-radius: 8px; font-size: 0.9rem; display: none; }
+    .status.info  { background: #eff6ff; color: #1d4ed8; display: block; }
+    .status.error { background: #fef2f2; color: #b91c1c; display: block; }
+    .reports { margin-top: 28px; }
+    .reports h2 { font-size: 1rem; color: #888; margin-bottom: 12px; }
+    .report-link { display: block; padding: 10px 14px; background: #f8f9fa; border-radius: 6px; text-decoration: none; color: #333; margin-bottom: 8px; font-size: 0.9rem; transition: background 0.15s; }
+    .report-link:hover { background: #e9ecef; }
+    .badge { float: right; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>WP Plugin Insight</h1>
+    <p class="sub">AI-powered quality &amp; security analysis for WordPress plugins.</p>
+
+    <input type="text" id="slug" placeholder="Plugin slug (e.g. woocommerce)" />
+    <button id="btn" onclick="analyze()">Analyze Plugin</button>
+
+    <div class="status" id="status"></div>
+
+    <div class="reports" id="reports"></div>
+  </div>
+
+  <script>
+    // Trigger GitHub Actions workflow_dispatch
+    async function analyze() {
+      const slug = document.getElementById("slug").value.trim().toLowerCase();
+      if (!slug) return;
+
+      const btn = document.getElementById("btn");
+      const status = document.getElementById("status");
+
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+      status.className = "status info";
+      status.textContent = `Analysis queued for "${slug}". The report will appear here in ~2 minutes after the GitHub Action completes.`;
+
+      // NOTE: To trigger workflow_dispatch from the browser you need a
+      // Personal Access Token with repo scope. Replace OWNER and REPO.
+      const OWNER = "your-github-username";
+      const REPO  = "WPPluginInsights";
+      const TOKEN = "";  // set via prompt or env — do not commit tokens
+
+      if (!TOKEN) {
+        status.textContent = "Set your GitHub token in index.html to enable browser-triggered analysis. Or trigger the workflow manually via GitHub Actions.";
+        btn.disabled = false;
+        btn.textContent = "Analyze Plugin";
+        return;
+      }
+
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/analyze.yml/dispatches`, {
+        method: "POST",
+        headers: {
+          "Authorization": `token ${TOKEN}`,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ref: "main", inputs: { plugin_slug: slug } }),
+      });
+
+      if (res.status === 204) {
+        status.textContent = `Analysis queued for "${slug}". Refresh in ~2 minutes to see the report.`;
+      } else {
+        status.className = "status error";
+        status.textContent = `Failed to trigger workflow (HTTP ${res.status}). Check your token and repo settings.`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Analyze Plugin";
+    }
+
+    // Load existing reports from /reports/ index
+    async function loadReports() {
+      try {
+        const res = await fetch("reports/index.json");
+        if (!res.ok) return;
+        const reports = await res.json();
+        if (!reports.length) return;
+
+        const container = document.getElementById("reports");
+        container.innerHTML = `<h2>Recent Reports</h2>`;
+        reports.forEach(r => {
+          const color = r.score >= 70 ? "#2ecc71" : r.score >= 40 ? "#f39c12" : "#e74c3c";
+          container.innerHTML += `
+            <a class="report-link" href="reports/${r.slug}.html">
+              ${r.name}
+              <span class="badge" style="color:${color}">${r.score}/100</span>
+            </a>`;
+        });
+      } catch (_) {}
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>

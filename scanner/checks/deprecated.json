@@ -1,0 +1,34 @@
+{
+  "functions": [
+    "wp_get_user_ip",
+    "the_widget",
+    "wp_specialchars",
+    "wp_timezone_supported",
+    "get_user_by_email",
+    "get_userdatabylogin",
+    "wp_setcookie",
+    "wp_get_cookie_login",
+    "wp_login",
+    "get_currentuserinfo",
+    "wp_create_thumbnail",
+    "wpmu_validate_user_signup",
+    "add_option_update_handler",
+    "remove_option_update_handler",
+    "dbDelta",
+    "get_alloptions",
+    "clean_url",
+    "wp_make_link_relative",
+    "sanitize_url",
+    "wp_dropdown_cats",
+    "wp_list_cats",
+    "get_catname",
+    "category_description",
+    "the_category_head",
+    "the_category_ID"
+  ],
+  "hooks": [
+    "wp_no_robots",
+    "admin_print_styles-post-new.php",
+    "media_buttons_context"
+  ]
+}
