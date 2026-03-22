@@ -1,0 +1,513 @@
+{
+  "slug": "wp-file-manager",
+  "score": 47,
+  "scan": {
+    "version": "8.0.2",
+    "files_scanned": 44,
+    "js_files_scanned": 288,
+    "deprecated_functions": [],
+    "security_flags": [
+      "base64_decode",
+      "[semgrep] php.lang.security.injection.tainted-filename.tainted-filename",
+      "[semgrep] php.lang.security.injection.echoed-request.echoed-request",
+      "[semgrep] javascript.browser.security.raw-html-concat.raw-html-concat",
+      "[semgrep] php.lang.security.curl-ssl-verifypeer-off.curl-ssl-verifypeer-off"
+    ],
+    "external_calls": 16,
+    "direct_db_access": true,
+    "min_php_version": "7.0",
+    "missing_i18n_samples": [
+      "\u003cp\u003eEmail Verified Successfully. Redirecting please wait.\u003c/p\u003e",
+      "setTimeout(function(){window.location.href="
+    ],
+    "suspicious_files": [
+      {
+        "file": "wp-file-manager/lib/php/elFinderSession.php",
+        "content": "\u003c?php\n\n/**\n * elFinder - file manager for web.\n * Session Wrapper Class.\n *\n * @package elfinder\n * @author  Naoki Sawada\n **/\n\nclass elFinderSession implements elFinderSessionInterface\n{\n    /**\n     * A flag of session started\n     *\n     * @var        boolean\n     */\n    protected $started = false;\n\n    /**\n     * To fix PHP bug that duplicate Set-Cookie header to be sent\n     *\n     * @var        boolean\n     * @see        https://bugs.php.net/bug.php?id=75554\n     */\n    protected $fixCookieRegist = false;\n\n    /**\n     * Array of session keys of this instance\n     *\n     * @var        array\n     */\n    protected $keys = array();\n\n    /**\n     * Is enabled base64encode\n     *\n     * @var        boolean\n     */\n    protected $base64encode = false;\n\n    /**\n     * Default options array\n     *\n     * @var        array\n     */\n    protected $opts = array(\n        'base64encode' =\u003e false,\n        'keys' =\u003e array(\n            'default' =\u003e 'elFinderCaches',\n            'netvolume' =\u003e 'elFinderNetVolumes'\n        ),\n        'cookieParams' =\u003e array()\n    );\n\n    /**\n     * Constractor\n     *\n     * @param      array $opts The options\n     *\n     * @return     self    Instanse of this class\n     */\n    public function __construct($opts)\n    {\n        $this-\u003eopts = array_merge($this-\u003eopts, $opts);\n        $this-\u003ebase64encode = !empty($this-\u003eopts['base64encode']);\n        $this-\u003ekeys = $this-\u003eopts['keys'];\n        if (function_exists('apache_get_version') || $this-\u003eopts['cookieParams']) {\n            $this-\u003efixCookieRegist = true;\n        }\n    }\n\n    /**\n     * {@inheritdoc}\n     */\n    public function get($key, $empty = null)\n    {\n        $closed = false;\n        if (!$this-\u003estarted) {\n            $closed = true;\n            $this-\u003estart();\n        }\n\n        $data = null;\n\n        if ($this-\u003estarted) {\n            $session =\u0026 $this-\u003egetSessionRef($key);\n            $data = $session;\n            if ($data \u0026\u0026 $this-\u003ebase64encode) {\n                $data = $this-\u003edecodeData($data);\n            }\n        }\n\n        $checkFn = null;\n        if (!is_null($empty)) {\n            if (is_string($empty)) {\n                $checkFn = 'is_string';\n            } elseif (is_array($empty)) {\n                $checkFn = 'is_array';\n            } elseif (is_object($empty)) {\n                $checkFn = 'is_object';\n            } elseif (is_float($empty)) {\n                $checkFn = 'is_float';\n            } elseif (is_int($empty)) {\n                $checkFn = 'is_int';\n            }\n        }\n\n        if (is_null($data) || ($checkFn \u0026\u0026 !$checkFn($data))) {\n            $session = $data = $empty;\n        }\n\n        if ($closed) {\n            $this-\u003eclose();\n        }\n\n        return $data;\n    }\n\n    /**"
+      }
+    ],
+    "semgrep_findings": [
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 176,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 180,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 183,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 187,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 198,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 213,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 217,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 222,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 229,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 243,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 247,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 252,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 258,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 273,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 277,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 281,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 288,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 292,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 295,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 299,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 337,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 338,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 340,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 341,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 343,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 344,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 381,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 382,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 385,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 386,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 389,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 461,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 462,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 464,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 465,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 467,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 468,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 470,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 471,
+        "severity": "WARNING",
+        "message": "File name based on user input risks server-side request forgery.",
+        "rule": "php.lang.security.injection.tainted-filename.tainted-filename",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 535,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 538,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 552,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 555,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 564,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 567,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 577,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 580,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 589,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 592,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 596,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/file_folder_manager.php",
+        "line": 600,
+        "severity": "ERROR",
+        "message": "`Echo`ing user input risks cross-site scripting vulnerability. You should use `htmlentities()` when showing data to users.",
+        "rule": "php.lang.security.injection.echoed-request.echoed-request",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/lib/js/commands/help.js",
+        "line": 156,
+        "severity": "WARNING",
+        "message": "User controlled data in a HTML string may result in XSS",
+        "rule": "javascript.browser.security.raw-html-concat.raw-html-concat",
+        "possible_false_positive": false
+      },
+      {
+        "tool": "semgrep",
+        "file": "wp-file-manager/lib/php/elFinder.class.php",
+        "line": 2736,
+        "severity": "ERROR",
+        "message": "SSL verification is disabled but should not be (currently CURLOPT_SSL_VERIFYPEER= false)",
+        "rule": "php.lang.security.curl-ssl-verifypeer-off.curl-ssl-verifypeer-off",
+        "possible_false_positive": false
+      }
+    ],
+    "phpcs_findings": [],
+    "cve_findings": [],
+    "dep_vulns": []
+  },
+  "summary": "# WordPress Plugin Security Review: `wp-file-manager`\n\n## Overall Assessment\n\nThe `wp-file-manager` plugin scores poorly on the security scan, receiving a grade of D (47/100). This plugin contains several significant vulnerabilities, including insecure handling of user inputs and server communications. Given the risk of these vulnerabilities being exploited to compromise the website, **it is not safe to install or use this plugin in its current state.**\n\n---\n\n## Issues Found\n\n### 1. **Potential JavaScript Code Injection**\n   - **What is it?**: The plugin contains a part where HTML is built in JavaScript using raw string concatenation (`raw-html-concat`). This technique can allow attackers to insert malicious code into the site's browser, potentially enabling phishing attacks or malicious activity.\n   - **Why it's dangerous?**: If an attacker manages to insert malicious code and it's displayed in the browser, they could steal sensitive data, such as login credentials, or perform malicious actions on behalf of the users.\n   - **Affected file/line**: `wp-file-manager/lib/js/commands/help.js:156`\n   - **Severity**: **High**\n\n---\n\n### 2. **Unsafe SSL Verification Setting**\n   - **What is it?**: The plugin disables SSL verification when making web requests (`curl-ssl-verifypeer-off`). This means it does not properly check whether the server being contacted is legitimate and secure.\n   - **Why it's dangerous?**: This opens up the possibility of \"man-in-the-middle\" attacks, where attackers could intercept and read data being transmitted, such as sensitive credentials or personal information.\n   - **Affected file/line**: `wp-file-manager/lib/php/elFinder.class.php:2736`\n   - **Severity**: **High**\n\n---\n\n### 3. **File Path Injection**\n   - **What is it?**: The plugin processes file paths directly from user input without proper validation (`tainted-filename`). An attacker could exploit this to manipulate the file system, possibly accessing or altering files they shouldn’t.\n   - **Why it's dangerous?**: This could lead to severe consequences, including the potential deletion of important files, disclosure of sensitive data, or even complete site compromise.\n   - **Affected files/lines**:\n     - `wp-file-manager/file_folder_manager.php:176`\n     - `wp-file-manager/file_folder_manager.php:198`\n     - (And 22 more lines)\n   - **Severity**: **Critical**\n\n---\n\n### 4. **Outputting Untrusted User Input**\n   - **What is it?**: The plugin displays data received directly from users (`echoed-request`). If malicious input is provided (e.g., via a URL or query parameter), it could be used to deliver dangerous scripts to site users.\n   - **Why it's dangerous?**: This is a form of Cross-Site Scripting (XSS), which can allow attackers to hijack user accounts, steal sensitive data, or redirect users to malicious sites.\n   - **Affected files/lines**:\n     - `wp-file-manager/file_folder_manager.php:180`\n     - `wp-file-manager/file_folder_manager.php:183`\n     - (And 25 more lines)\n   - **Severity**: **Critical**\n\n---\n\n### 5. **Use of `base64_decode`**\n   - **What is it?**: The plugin uses the `base64_decode` function, a common method for encoding and decoding data.\n   - **Why it's dangerous?**: While not inherently malicious, the use of `base64_decode` without safeguards can make the site more susceptible to injection attacks or the execution of hidden malicious code.\n   - **Cast in a larger risk context**: With other significant vulnerabilities identified, this adds to the plugin's insecure programming practices.\n   - **Severity**: **Medium**\n\n---\n\n## Recommendation\n\nThe `wp-file-manager` plugin in its current state is **unsafe to install or use**. Its multiple critical vulnerabilities—particularly related to direct file path manipulation and displaying untrusted user inputs—pose serious risks to website security. The following steps are recommended:\n\n1. **Avoid installing and deactivate immediately if already in use.** This plugin has significant issues that can be exploited to compromise your website.\n2. **Look for alternative file management plugins.** There are more secure WordPress file management tools available. Choose plugins with high ratings, regular updates, and a clean security record.\n3. **Contact the plugin developer.** If this plugin is critical to your workflow, reach out to the developer to see if they plan to address these issues quickly. Regular updates to software often fix vulnerabilities.\n4. **Perform a full security review of your site.** If the plugin has been installed in the past, evaluate your website for signs of unauthorized file creation, suspicious files, or altered permissions.\n\nBy avoiding the installation or use of this version of the plugin, you'll significantly reduce your site's exposure to security risks. Beyond this, continue to keep WordPress, themes, and all plugins updated regularly to secure your site."
+}
