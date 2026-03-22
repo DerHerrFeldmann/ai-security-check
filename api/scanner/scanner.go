@@ -502,6 +502,22 @@ func runPHPCS(dir string) []Finding {
 	return findings
 }
 
+// Grade converts a 0–100 score to an A–F letter grade.
+func Grade(score int) string {
+	switch {
+	case score >= 80:
+		return "A"
+	case score >= 65:
+		return "B"
+	case score >= 50:
+		return "C"
+	case score >= 35:
+		return "D"
+	default:
+		return "F"
+	}
+}
+
 // Score calculates a quality score 0–100.
 // Penalties are capped so that large but well-maintained plugins
 // (e.g. WooCommerce) don't hit 0 due to sheer volume of findings.

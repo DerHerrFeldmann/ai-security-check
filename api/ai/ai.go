@@ -121,7 +121,7 @@ func Summarize(slug string, result scanner.Result, score int) (string, error) {
 	prompt := fmt.Sprintf(`You are a WordPress security expert reviewing a plugin for a site administrator.
 
 Plugin: %s
-Score: %d/100
+Score: %d/100 (Grade: %s)
 
 Scan overview:
 %s
@@ -144,7 +144,7 @@ For each issue type found, write a paragraph explaining:
 ## Recommendation
 Concrete steps the admin should take. Be specific — e.g. "Do not install", "Update to version X", "Safe to use but monitor".
 
-No jargon. Write as if explaining to a non-technical website owner.`, slug, score, string(scanJSON), string(issuesJSON), codeSection)
+No jargon. Write as if explaining to a non-technical website owner.`, slug, score, scanner.Grade(score), string(scanJSON), string(issuesJSON), codeSection)
 
 	resp, err := p.client.CreateChatCompletion(context.Background(),
 		openai.ChatCompletionRequest{

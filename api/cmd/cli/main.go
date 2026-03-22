@@ -88,15 +88,15 @@ func main() {
 		return
 	}
 
-	// Pretty-print output (unchanged)
+	// Pretty-print output
+	grade := scanner.Grade(score)
 	scoreColor := green
-	if score < 70 {
+	if grade == "C" {
 		scoreColor = yellow
-	}
-	if score < 40 {
+	} else if grade == "D" || grade == "F" {
 		scoreColor = red
 	}
-	fmt.Printf("\n%s%s Score: %d/100%s\n", bold, scoreColor, score, reset)
+	fmt.Printf("\n%s%s Grade: %s  (score %d/100)%s\n", bold, scoreColor, grade, score, reset)
 	fmt.Printf("%s %d PHP files scanned · min PHP %s%s\n\n", gray, result.FilesScanned, result.MinPHPVersion, reset)
 
 	if len(result.SecurityFlags) > 0 {

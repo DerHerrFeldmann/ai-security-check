@@ -56,10 +56,11 @@ function getRuleInfo(ruleId: string) {
   return key ? ruleExplanations[key] : { label: ruleId.split(".").pop() ?? ruleId, explanation: "" };
 }
 
-const scoreColor = (s: number) => s >= 70 ? "#16a34a" : s >= 40 ? "#d97706" : "#dc2626";
-const scoreBg    = (s: number) => s >= 70 ? "#f0fdf4" : s >= 40 ? "#fffbeb" : "#fef2f2";
-const scoreDark  = (s: number) => s >= 70 ? "#14532d" : s >= 40 ? "#78350f" : "#7f1d1d";
-const scoreLabel = (s: number) => s >= 70 ? "Good"    : s >= 40 ? "Review"  : "Critical";
+const scoreGrade = (s: number) => s >= 80 ? "A" : s >= 65 ? "B" : s >= 50 ? "C" : s >= 35 ? "D" : "F";
+const scoreColor = (s: number) => s >= 80 ? "#16a34a" : s >= 65 ? "#65a30d" : s >= 50 ? "#d97706" : s >= 35 ? "#ea580c" : "#dc2626";
+const scoreBg    = (s: number) => s >= 80 ? "#f0fdf4" : s >= 65 ? "#f7fee7" : s >= 50 ? "#fffbeb" : s >= 35 ? "#fff7ed" : "#fef2f2";
+const scoreDark  = (s: number) => s >= 80 ? "#14532d" : s >= 65 ? "#365314" : s >= 50 ? "#78350f" : s >= 35 ? "#7c2d12" : "#7f1d1d";
+const scoreLabel = (s: number) => s >= 80 ? "Excellent" : s >= 65 ? "Good" : s >= 50 ? "Fair" : s >= 35 ? "Poor" : "Critical";
 
 function Pill({ label, color }: { label: string; color: string }) {
   return (
@@ -439,9 +440,8 @@ export default function App() {
                 border: `1px solid ${scoreColor(report.score)}30`,
                 borderRadius: 16, padding: 24, textAlign: "center",
               }}>
-                <div style={{ color: scoreColor(report.score), fontSize: 60, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
+                <div style={{ color: scoreColor(report.score), fontSize: 72, fontWeight: 800, lineHeight: 1 }}>{scoreGrade(report.score)}</div>
                 <div style={{ color: scoreColor(report.score), fontSize: 13, marginTop: 6, fontWeight: 600 }}>{scoreLabel(report.score)}</div>
-                <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>out of 100</div>
               </div>
               {/* Dark mode score card */}
               <div className="score-card-dark" style={{
@@ -449,9 +449,8 @@ export default function App() {
                 border: `1px solid ${scoreColor(report.score)}40`,
                 borderRadius: 16, padding: 24, textAlign: "center",
               }}>
-                <div style={{ color: scoreColor(report.score), fontSize: 60, fontWeight: 800, lineHeight: 1 }}>{report.score}</div>
+                <div style={{ color: scoreColor(report.score), fontSize: 72, fontWeight: 800, lineHeight: 1 }}>{scoreGrade(report.score)}</div>
                 <div style={{ color: scoreColor(report.score), fontSize: 13, marginTop: 6, fontWeight: 600 }}>{scoreLabel(report.score)}</div>
-                <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>out of 100</div>
               </div>
 
               <div className="card" style={{ borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
