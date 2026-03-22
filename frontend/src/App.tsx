@@ -266,7 +266,12 @@ async function checkCache(slug: string): Promise<{ currentVersion: string; cache
 }
 
 // --- GitHub API helpers ---
-async function dispatchWorkflow(slug: string) {
+
+// Dispatches the workflow and returns the specific run ID so concurrent scans
+// don't accidentally poll each other's runs.
+async function dispatchWorkflow(slug: string): Promise<number> {
+  const beforeDispatch = Date.now();
+
   const res = await fetch(
     `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml/dispatches`,
     {
@@ -276,19 +281,35 @@ async function dispatchWorkflow(slug: string) {
     }
   );
   if (!res.ok) throw new Error(`Failed to dispatch workflow: ${res.status} ${await res.text()}`);
+
+  // GitHub takes a moment to register the run — wait then find our run by creation time
+  await new Promise(r => setTimeout(r, 4000));
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    const runsRes = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml/runs?event=workflow_dispatch&per_page=5`,
+      { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: "application/vnd.github+json" } }
+    );
+    if (runsRes.ok) {
+      const runs: { id: number; created_at: string }[] = (await runsRes.json()).workflow_runs ?? [];
+      const ourRun = runs.find(r => new Date(r.created_at).getTime() >= beforeDispatch);
+      if (ourRun) return ourRun.id;
+    }
+    await new Promise(r => setTimeout(r, 3000));
+  }
+  throw new Error("Could not find dispatched workflow run — check GitHub Actions.");
 }
 
-async function pollUntilComplete(): Promise<void> {
+async function pollRunById(runId: number): Promise<void> {
   const deadline = Date.now() + 10 * 60 * 1000;
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, 5000));
     const res = await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/analyze.yml/runs?per_page=1&event=workflow_dispatch`,
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runs/${runId}`,
       { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: "application/vnd.github+json" } }
     );
     if (!res.ok) continue;
-    const run = (await res.json()).workflow_runs?.[0];
-    if (!run) continue;
+    const run = await res.json();
     if (run.status === "completed") {
       if (run.conclusion === "success") return;
       throw new Error(`Workflow finished with conclusion: ${run.conclusion}`);
@@ -333,10 +354,9 @@ export default function App() {
         setReport(cachedReport!);
         return;
       }
-      await dispatchWorkflow(s);
-      await new Promise(r => setTimeout(r, 3000));
+      const runId = await dispatchWorkflow(s);
       setStatus("running");
-      await pollUntilComplete();
+      await pollRunById(runId);
       setStatus("done");
       setReport(await fetchReport(s));
     } catch (e: unknown) {

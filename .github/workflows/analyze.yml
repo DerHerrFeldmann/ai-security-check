@@ -48,5 +48,8 @@ jobs:
           git config user.name "WP Plugin Insight Bot"
           git config user.email "bot@wp-plugin-insight"
           git add reports/
-          git diff --staged --quiet || git commit -m "report: ${{ inputs.plugin_slug }}"
-          git push
+          git diff --staged --quiet && exit 0
+          git commit -m "report: ${{ inputs.plugin_slug }}"
+          for i in 1 2 3; do
+            git pull --rebase && git push && break || sleep 5
+          done
