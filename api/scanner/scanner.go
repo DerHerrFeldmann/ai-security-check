@@ -81,6 +81,8 @@ type Result struct {
 	SuspiciousFiles    []CodeSnippet `json:"suspicious_files"`
 	SemgrepFindings    []Finding     `json:"semgrep_findings"`
 	PHPCSFindings      []Finding     `json:"phpcs_findings"`
+	CVEFindings        []CVEFinding  `json:"cve_findings"`
+	DepVulns           []DepVuln     `json:"dep_vulns"`
 }
 
 var deprecatedFuncs = []string{
@@ -141,15 +143,21 @@ func Analyze(slug string) (Result, error) {
 
 	result.Version = detectVersion(tmpDir, slug)
 
-	// Run external tools in parallel
+	// Run all external checks in parallel
 	semgrepCh := make(chan []Finding, 1)
 	phpcsСh := make(chan []Finding, 1)
+	cveCh := make(chan []CVEFinding, 1)
+	depsCh := make(chan []DepVuln, 1)
 
 	go func() { semgrepCh <- runSemgrep(tmpDir) }()
 	go func() { phpcsСh <- runPHPCS(tmpDir) }()
+	go func() { cveCh <- fetchCVEs(slug, result.Version) }()
+	go func() { depsCh <- scanDeps(tmpDir) }()
 
 	result.SemgrepFindings = <-semgrepCh
 	result.PHPCSFindings = <-phpcsСh
+	result.CVEFindings = <-cveCh
+	result.DepVulns = <-depsCh
 
 	// Check and remove false positives while temp dir still exists
 	confirmed := []Finding{}
@@ -524,13 +532,35 @@ func Grade(score int) string {
 func Score(r Result) int {
 	score := 100
 	score -= min(len(r.DeprecatedFuncs)*5, 15)  // max -15
-	score -= min(len(r.SecurityFlags)*8, 24)     // max -24 (was -15 each, uncapped)
+	score -= min(len(r.SecurityFlags)*8, 24)     // max -24
 	if r.DirectDBAccess {
 		score -= 5 // informational, not always bad in WP
 	}
 	score -= min(len(r.MissingI18nSamples)*2, 10) // max -10
 	score -= min(len(r.SemgrepFindings)*3, 20)    // max -20
 	score -= min(len(r.PHPCSFindings)/10, 10)     // max -10
+
+	// Known CVEs — weighted by CVSS severity
+	var cveCritical, cveHigh, cveMedium int
+	for _, c := range r.CVEFindings {
+		switch {
+		case c.CVSSScore >= 9.0:
+			cveCritical++
+		case c.CVSSScore >= 7.0:
+			cveHigh++
+		case c.CVSSScore >= 4.0:
+			cveMedium++
+		default:
+			cveMedium++ // treat unknown/low as medium
+		}
+	}
+	score -= min(cveCritical*15, 30) // max -30
+	score -= min(cveHigh*8, 16)      // max -16
+	score -= min(cveMedium*4, 8)     // max -8
+
+	// Vulnerable dependencies
+	score -= min(len(r.DepVulns)*3, 9) // max -9
+
 	if score < 0 {
 		return 0
 	}

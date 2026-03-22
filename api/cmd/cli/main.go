@@ -144,6 +144,50 @@ func main() {
 		fmt.Println()
 	}
 
+	if len(result.CVEFindings) > 0 {
+		fmt.Printf("%s%s Known CVEs (%d affecting v%s):%s\n", bold, red, len(result.CVEFindings), result.Version, reset)
+		for _, c := range result.CVEFindings {
+			label := "LOW"
+			col := yellow
+			switch {
+			case c.CVSSScore >= 9.0:
+				label, col = "CRITICAL", red
+			case c.CVSSScore >= 7.0:
+				label, col = "HIGH", red
+			case c.CVSSScore >= 4.0:
+				label, col = "MEDIUM", yellow
+			}
+			fixInfo := ""
+			if c.Unfixed {
+				fixInfo = " · no fix available"
+			} else if c.FixedIn != "" {
+				fixInfo = fmt.Sprintf(" · fixed in %s", c.FixedIn)
+			}
+			fmt.Printf("  %s[%s %.1f] %s%s%s\n", col, label, c.CVSSScore, c.Title, fixInfo, reset)
+		}
+		fmt.Println()
+	} else {
+		fmt.Printf("  %s✓ No known CVEs%s\n\n", green, reset)
+	}
+
+	if len(result.DepVulns) > 0 {
+		fmt.Printf("%s%s Vulnerable Dependencies (%d):%s\n", bold, red, len(result.DepVulns), reset)
+		for _, d := range result.DepVulns {
+			cveInfo := ""
+			if d.CVE != "" {
+				cveInfo = " · " + d.CVE
+			}
+			fixInfo := ""
+			if len(d.FixedIn) > 0 {
+				fixInfo = fmt.Sprintf(" → fix: %s", strings.Join(d.FixedIn, ", "))
+			}
+			fmt.Printf("  %s✗ %s@%s [%s]%s%s%s\n", red, d.Package, d.Version, strings.ToUpper(d.Severity), cveInfo, fixInfo, reset)
+		}
+		fmt.Println()
+	} else {
+		fmt.Printf("  %s✓ No vulnerable dependencies%s\n\n", green, reset)
+	}
+
 	fmt.Printf("%s%s Stats:%s\n", bold, cyan, reset)
 	fmt.Printf("  External HTTP calls : %d\n", result.ExternalCalls)
 	fmt.Printf("  Direct DB access    : %v\n", result.DirectDBAccess)

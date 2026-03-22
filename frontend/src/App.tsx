@@ -16,6 +16,26 @@ interface Finding {
   fp_reason?: string;
 }
 
+interface CVEFinding {
+  uuid: string;
+  title: string;
+  cvss_score: number;
+  cvss_severity?: string;
+  fixed_in?: string;
+  unfixed: boolean;
+  references?: string[];
+}
+
+interface DepVuln {
+  package: string;
+  version: string;
+  id: string;
+  cve?: string;
+  summary: string;
+  severity: string;
+  fixed_in?: string[];
+}
+
 interface ScanResult {
   version?: string;
   files_scanned: number;
@@ -28,6 +48,8 @@ interface ScanResult {
   missing_i18n_samples: string[];
   semgrep_findings: Finding[];
   phpcs_findings: Finding[];
+  cve_findings: CVEFinding[];
+  dep_vulns: DepVuln[];
 }
 
 interface Report {
@@ -500,6 +522,67 @@ export default function App() {
                 }
               </div>
             </div>
+
+            {/* Known CVEs */}
+            <Collapsible title="Known CVEs" count={scan.cve_findings?.length ?? 0} color="#dc2626">
+              {(scan.cve_findings?.length ?? 0) === 0
+                ? <span style={{ color: "#16a34a", fontSize: 14 }}>✓ No known CVEs affecting this version</span>
+                : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {scan.cve_findings.map(c => {
+                      const col = c.cvss_score >= 9 ? "#dc2626" : c.cvss_score >= 7 ? "#ea580c" : "#d97706";
+                      const label = c.cvss_score >= 9 ? "CRITICAL" : c.cvss_score >= 7 ? "HIGH" : c.cvss_score >= 4 ? "MEDIUM" : "LOW";
+                      return (
+                        <div key={c.uuid} className="card-deep" style={{ borderRadius: 10, padding: "12px 16px", border: `1px solid ${col}20` }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <span style={{ background: col + "18", color: col, border: `1px solid ${col}30`, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{label} {c.cvss_score.toFixed(1)}</span>
+                            <span style={{ fontWeight: 600, fontSize: 14 }}>{c.title}</span>
+                          </div>
+                          <div className="text-muted" style={{ fontSize: 13, marginTop: 6 }}>
+                            {c.unfixed
+                              ? <span style={{ color: "#dc2626" }}>No fix available</span>
+                              : c.fixed_in ? <>Fixed in <code style={{ fontFamily: "monospace", fontSize: 12 }}>{c.fixed_in}</code></> : null
+                            }
+                            {c.references && c.references.length > 0 && (
+                              <span style={{ marginLeft: 12 }}>
+                                {c.references.map((ref, i) => (
+                                  <a key={i} href={ref} target="_blank" rel="noreferrer" style={{ marginRight: 8, fontSize: 12 }}>Reference {i + 1} →</a>
+                                ))}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+            </Collapsible>
+
+            {/* Vulnerable Dependencies */}
+            <Collapsible title="Vulnerable Dependencies" count={scan.dep_vulns?.length ?? 0} color="#ea580c">
+              {(scan.dep_vulns?.length ?? 0) === 0
+                ? <span style={{ color: "#16a34a", fontSize: 14 }}>✓ No vulnerable dependencies found</span>
+                : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {scan.dep_vulns.map((d, i) => {
+                      const col = d.severity === "critical" ? "#dc2626" : d.severity === "high" ? "#ea580c" : "#d97706";
+                      return (
+                        <div key={i} className="card-deep" style={{ borderRadius: 10, padding: "12px 16px", border: `1px solid ${col}20` }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <span style={{ background: col + "18", color: col, border: `1px solid ${col}30`, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{d.severity.toUpperCase()}</span>
+                            <span style={{ fontFamily: "monospace", fontWeight: 600, fontSize: 13 }}>{d.package}@{d.version}</span>
+                            {d.cve && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{d.cve}</span>}
+                          </div>
+                          {d.summary && <div className="text-muted" style={{ fontSize: 13, marginTop: 6 }}>{d.summary}</div>}
+                          {d.fixed_in && d.fixed_in.length > 0 && (
+                            <div style={{ fontSize: 12, marginTop: 4, color: "#16a34a" }}>
+                              Fix: upgrade to {d.fixed_in.join(", ")}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+            </Collapsible>
 
             {/* Findings */}
             <Collapsible title="Semgrep" count={scan.semgrep_findings?.length ?? 0} color="#dc2626">
