@@ -103,10 +103,10 @@ func cveApplies(maxVersion, maxOp string, unfixed bool, installed string) bool {
 		return false
 	}
 	cmp := compareVersions(installed, maxVersion)
-	if maxOp == "<=" {
+	if maxOp == "<=" || maxOp == "lte" {
 		return cmp <= 0
 	}
-	return cmp < 0 // default operator is "<"
+	return cmp < 0 // "<" / "lt" / default
 }
 
 // compareVersions compares two dot-separated version strings numerically.
