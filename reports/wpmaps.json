@@ -1,0 +1,21 @@
+{
+  "slug": "wpmaps",
+  "score": 100,
+  "scan": {
+    "version": "trunk",
+    "files_scanned": 3,
+    "js_files_scanned": 0,
+    "deprecated_functions": [],
+    "security_flags": [],
+    "external_calls": 2,
+    "direct_db_access": false,
+    "min_php_version": "7.0",
+    "missing_i18n_samples": [],
+    "suspicious_files": [],
+    "semgrep_findings": [],
+    "phpcs_findings": [],
+    "cve_findings": [],
+    "dep_vulns": []
+  },
+  "summary": "# Plugin Security Review: WPMaps\n\n## Overall Assessment\nThe WPMaps plugin has been reviewed and found to be safe for use on your WordPress website. The security scan did not identify any vulnerabilities, deprecated code, or risky behaviors. Additionally, it adheres to good coding practices, making it a secure choice for your site.\n\n## Issues Found\nNo confirmed security issues were identified during the scan. All files were reviewed, and there were no vulnerabilities, security flags, or signs of outdated or risky functionality. The plugin does make two external calls, but no security concerns were detected with these actions. Direct database access is not used, which further enhances its safety.\n\n## Recommendation\nWPMaps is safe to use on your WordPress website. Since no issues were found, there is no need for additional action at this time. Continue to monitor the plugin for updates and ensure that you are running the latest version to benefit from ongoing improvements or potential security fixes in the future."
+}
