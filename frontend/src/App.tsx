@@ -342,6 +342,7 @@ export default function App() {
       const { currentVersion, cachedReport } = await checkCache(s);
       const cacheHit =
         cachedReport !== null &&
+        cachedReport.scan?.cve_findings !== undefined && // invalidate pre-CVE reports
         (
           // WP.org version matches cached version
           (currentVersion !== "" && cachedReport.scan?.version === currentVersion) ||
