@@ -9,6 +9,23 @@ import (
 	"strings"
 )
 
+// toFloat64 converts a JSON score value to float64.
+// The wpvulnerability.net API returns scores as quoted strings (e.g. "10.0"),
+// which would cause json.Unmarshal to fail on a float64 field.
+func toFloat64(v interface{}) float64 {
+	switch val := v.(type) {
+	case float64:
+		return val
+	case string:
+		f, _ := strconv.ParseFloat(val, 64)
+		return f
+	case json.Number:
+		f, _ := val.Float64()
+		return f
+	}
+	return 0
+}
+
 // CVEFinding is a known vulnerability from wpvulnerability.net affecting the installed version.
 type CVEFinding struct {
 	UUID         string   `json:"uuid"`
@@ -46,7 +63,7 @@ func fetchCVEs(slug, version string) []CVEFinding {
 				} `json:"operator"`
 				Impact struct {
 					CVSS struct {
-						Score    float64 `json:"score"`
+						Score    interface{} `json:"score"` // API returns quoted string e.g. "10.0"
 						Severity string  `json:"severity"`
 					} `json:"cvss"`
 				} `json:"impact"`
@@ -80,7 +97,7 @@ func fetchCVEs(slug, version string) []CVEFinding {
 		findings = append(findings, CVEFinding{
 			UUID:         v.UUID,
 			Title:        v.Name,
-			CVSSScore:    v.Impact.CVSS.Score,
+			CVSSScore:    toFloat64(v.Impact.CVSS.Score),
 			CVSSSeverity: strings.ToLower(v.Impact.CVSS.Severity),
 			FixedIn:      op.MaxVersion,
 			Unfixed:      unfixed,
